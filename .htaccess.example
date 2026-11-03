@@ -1,0 +1,104 @@
+# Velk — root .htaccess (single-tier layout)
+#
+# Front controller + security in one file. Velk runs entirely from the
+# project root: index.php is here, sensitive directories are blocked here,
+# static assets pass through here.
+#
+# Required Apache modules: mod_rewrite (universal on shared hosts),
+# mod_authz_core (Apache 2.4+, the standard everywhere now), and
+# optionally mod_headers + mod_expires for the polish at the bottom.
+#
+# Copy this file to `.htaccess` (the Installer does this automatically on
+# `bin/velk install` and `bin/velk files:init`). Edit the live `.htaccess`
+# freely — it's gitignored, so customizations survive Velk updates.
+
+Options -Indexes -MultiViews
+ServerSignature Off
+AddDefaultCharset UTF-8
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # ─── Block dot-directories and dotfiles anywhere in the path ─────────
+    # Catches more than the FilesMatch block below: that one matches by
+    # *basename*, so it blocks `/.env` but NOT `/.git/config` or
+    # `/theme/.git/HEAD` (their basenames — `config`, `HEAD` — aren't
+    # dotfiles). `theme/.git/` shows up whenever the theme was set up via
+    # `git clone <repo> theme` (as AGENTS.md instructs), so without this
+    # rule the whole git history — including anything ever committed to
+    # theme/.env — is servable over HTTP. This rule matches the full
+    # request path instead, denying any segment that starts with a dot.
+    # /.well-known/ is exempted so ACME (Let's Encrypt) HTTP-01 validation
+    # and /.well-known/security.txt keep working. Mirrors nginx.conf.example's
+    # `location ~ /\.(?!well-known) { deny all; }` — complements, not
+    # replaces, the internal-dir and FilesMatch rules below.
+    RewriteRule "(^|/)\.(?!well-known/)" - [F,L]
+
+    # ─── Block direct access to internal directories ────────────────────
+    # These never serve over HTTP. Returning 403 (instead of letting the
+    # rewrite below catch them) keeps engine code, env files, and uploads
+    # behind a hard fence even if a future change to the rewrites slips.
+    RewriteRule ^(core|config|migrations|storage|bin|vendor|node_modules)(/|$) - [F,L]
+
+    # Block PHP files inside theme/. Templates are loaded by the engine via
+    # `include`, never requested directly. CSS, JS, fonts, and images in
+    # theme/ pass through this rule (only `.php` is blocked) and get served
+    # as static files by the rule below.
+    RewriteRule ^theme/.*\.php$ - [F,L]
+
+    # ─── Pass through real static files ─────────────────────────────────
+    # CSS, JS, images at the project root or under theme/, plus anything
+    # else that exists on disk (robots.txt, favicons, etc.). Apache serves
+    # these directly without going through index.php.
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # ─── Front controller ───────────────────────────────────────────────
+    # Everything else lands on index.php — pretty URLs, /admin, /uploads/...
+    # (uploads are served by the engine, not as static files, because the
+    # storage/ directory is blocked above).
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Some shared hosts run PHP-CGI/FPM and strip Authorization headers — this
+# preserves them so HTTP Basic auth and OAuth bearer tokens work.
+<IfModule mod_setenvif.c>
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+</IfModule>
+
+# Defense in depth: deny dotfiles, env files, schema/config files, and the
+# `.example` templates everywhere. These extensions never need to be served.
+<FilesMatch "(^\.|\.(env|json|lock|md|log|ini|sql|bak|swp|orig|yaml|yml|toml|sh|example)$)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Long-lived caching for static assets. Filenames should change when the
+# content changes (cache-busting) — otherwise drop the immutable directive.
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType text/css "access plus 1 month"
+    ExpiresByType application/javascript "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png "access plus 1 month"
+    ExpiresByType image/webp "access plus 1 month"
+    ExpiresByType image/avif "access plus 1 month"
+    ExpiresByType image/svg+xml "access plus 1 month"
+    ExpiresByType font/woff2 "access plus 1 year"
+    ExpiresByType font/woff "access plus 1 year"
+</IfModule>
+
+# Reasonable security headers. HSTS is intentionally OFF here — only enable
+# it once you're sure HTTPS is permanent on this domain.
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    # Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+</IfModule>

@@ -1,0 +1,16 @@
+# robots.txt — public crawler instructions.
+#
+# This file is per-project. The Installer copies this template (the
+# `.example` shipped with Velk core) into `public/robots.txt` if no live
+# version exists, then leaves it alone. Edit `public/robots.txt` freely;
+# it won't be overwritten by future updates.
+#
+# Reference: https://www.rfc-editor.org/rfc/rfc9309
+
+User-agent: *
+Allow: /
+
+# Tell search engines where the auto-generated sitemap lives. Replace the
+# domain when you deploy. Velk serves /sitemap.xml automatically (see
+# core/Sitemap.php) — no extra setup needed beyond updating this URL.
+Sitemap: https://example.com/sitemap.xml

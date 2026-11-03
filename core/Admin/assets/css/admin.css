@@ -1,0 +1,3444 @@
+/* =============================================================================
+   Velk — Admin
+   Quartzo-inspired identity. Refined neutral B/W with single accent hue.
+   ============================================================================= */
+
+/* Fontes self-hospedadas — Inter + JetBrains Mono (subsets latin + latin-ext).
+   SIL Open Font License 1.1 — ver assets/fonts/LICENSE.txt. Servidas por
+   AssetController::font() em /admin/__static/fonts/. Sem Google Fonts: zero
+   dependência de rede externa e zero vazamento de IP do admin (GDPR). */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/inter-400-latinext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/inter-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/inter-500-latinext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/inter-500-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/inter-600-latinext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/inter-600-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/inter-700-latinext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/inter-700-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/jetbrainsmono-400-latinext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/jetbrainsmono-400-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/jetbrainsmono-500-latinext.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../fonts/jetbrainsmono-500-latin.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ---------- Tokens ---------- */
+:root {
+  /* Single accent hue — emerald/jade green */
+  --accent-h: 152;
+  --accent: oklch(0.55 0.13 var(--accent-h));
+  --accent-soft: oklch(0.55 0.13 var(--accent-h) / 0.12);
+  --accent-ink: oklch(0.32 0.10 var(--accent-h));
+
+  /* Surfaces (light) */
+  --bg: #f9f9fb;
+  --surface: oklch(1 0 0);
+  --surface-2: #f6f6f9;
+  --surface-3: oklch(0.96 0 0);
+
+  /* Ink ramp */
+  --ink: oklch(0.18 0 0);
+  --ink-2: oklch(0.36 0 0);
+  --ink-3: oklch(0.55 0 0);
+  --ink-4: oklch(0.70 0 0);
+
+  /* Lines */
+  --line: #e7e7e9;
+  --line-2: oklch(0.88 0 0);
+
+  /* Semantic */
+  --ok: oklch(0.55 0.14 152);
+  --warn: oklch(0.68 0.14 70);
+  --err: oklch(0.55 0.20 25);
+  --err-soft: oklch(0.55 0.20 25 / 0.10);
+  --err-ink: oklch(0.42 0.18 25);
+
+  /* Legacy aliases — keep so existing markup still resolves */
+  --fg: var(--ink);
+  --fg-muted: var(--ink-2);
+  --fg-subtle: var(--ink-3);
+  --fg-faint: var(--ink-4);
+  --bg-app: var(--bg);
+  --bg-alt: var(--surface-2);
+  --bg-soft: var(--surface-2);
+  --bg-dim: var(--surface-3);
+  --bg-hover: var(--surface-3);
+  --line-strong: var(--line-2);
+  --danger: var(--err);
+  --success: var(--ok);
+
+  /* Type */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* Spacing */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+  --s-12: 48px;
+  --s-16: 64px;
+
+  /* Radii */
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+  --r-xl: 12px;
+
+  /* Single-line controls — text, date, select and the button beside them —
+     share one height. Left alone, each takes what the browser gives it
+     (Chrome: 33.5px text and select, 35.5px date, 31px button), and a form
+     row aligned by its bottom edge shows the button sitting lower. */
+  --control-h: 34px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 0 rgba(0,0,0,0.02);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 0 0 1px var(--line);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 10px 30px rgba(0,0,0,0.10);
+  --shadow-focus: 0 0 0 3px oklch(0.18 0 0 / 0.08);
+  --shadow-focus-err: 0 0 0 3px oklch(0.55 0.20 25 / 0.12);
+  --shadow-inset: inset 0 0 0 1px var(--line);
+
+  /* Layout */
+  --sidebar-w: 244px;
+  --row-pad: 10px 14px;
+  --section-gap: 20px;
+  --card-pad: 18px 20px;
+
+  --t-fast: 0.12s cubic-bezier(.4, 0, .2, 1);
+  --t-normal: 0.18s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* ---------- Reset ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv11", "ss01", "ss03";
+}
+
+button { font-family: inherit; font-size: inherit; cursor: pointer; }
+a { color: inherit; text-decoration: none; transition: color var(--t-fast); }
+input, textarea, select { font-family: inherit; font-size: inherit; color: inherit; }
+::selection { background: var(--accent-soft); color: var(--accent-ink); }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* ---------- Utilities ---------- */
+.muted { color: var(--ink-3); }
+.spacer { flex: 1; }
+.row { display: flex; gap: var(--s-3); align-items: center; }
+.text-mono { font-family: var(--font-mono); font-size: 12px; }
+.small { font-size: 12px; }
+
+/* =============================================================================
+   APP SHELL
+   ============================================================================= */
+
+.app {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) 1fr;
+  min-height: 100vh;
+  background: var(--bg);
+}
+
+.app__sidebar {
+  background: #10101e;
+  border-right: 0;
+  /* Contexto escuro — sobrescreve os tokens SÓ aqui; nav, brand e user-card
+     herdam cinzas claros sem reescrever cada regra. */
+  --ink: #f3f3f8;
+  --ink-2: #c7c8d6;
+  --ink-3: #9a9bab;
+  --ink-4: #74758c;
+  --surface: #282835;
+  --surface-2: rgba(255, 255, 255, 0.05);
+  --surface-3: #22222e;
+  --line: rgba(255, 255, 255, 0.10);
+  --accent: #ffffff;
+  --accent-ink: #ffffff;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  min-height: 0;
+}
+
+/* Marca e avatar: fundo deles usava var(--accent) (agora branco no escopo),
+   então aqui recebem um overlay claro + glifo branco — os dois iguais. */
+.app__sidebar .brand__mark,
+.app__sidebar .user-card__avatar {
+  background: rgba(255, 255, 255, 0.13);
+  color: #fff;
+  box-shadow: none;
+}
+
+/* Sem anel/borda no item selecionado (o inset 1px de --line virava contorno claro). */
+.app__sidebar .nav__link--active,
+.app__sidebar .nav__link--child.nav__link--active {
+  box-shadow: none;
+}
+
+.app__main {
+  min-width: 0;
+  padding: var(--s-8) var(--s-10) var(--s-16);
+  max-width: 1180px;
+}
+
+/* =============================================================================
+   BRAND
+   ============================================================================= */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 16px 16px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+}
+
+.brand__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  background: var(--ink);
+  color: var(--bg);
+  border-radius: 5px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  flex-shrink: 0;
+}
+
+.brand__lockup {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.brand__name {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.brand__caption {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  font-weight: 400;
+}
+
+.brand__view {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  font-weight: 400;
+  text-decoration: none;
+  width: fit-content;
+  transition: color var(--t-fast);
+}
+.brand__view:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* =============================================================================
+   NAV
+   ============================================================================= */
+
+.nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 8px 12px;
+}
+
+.nav__group { margin-top: 12px; }
+.nav__group:first-child { margin-top: 4px; }
+
+.nav__group-title {
+  padding: 6px 8px;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-4);
+  font-weight: 500;
+}
+
+.nav__link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  text-align: left;
+  text-decoration: none;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+
+.nav__link:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.nav__link--active {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.nav__link__icon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+}
+.nav__link--active .nav__link__icon { color: var(--ink); }
+
+.nav__link__icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.nav__link__label {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav__link-count {
+  margin-left: auto;
+  font-size: 10.5px;
+  font-family: var(--font-mono);
+  background: var(--surface-3);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 99px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Child links — sub-items under expandable item types / forms. A linha e a
+   bolinha ficam no centro do ícone do link principal (8px de padding + metade
+   dos 15px do ícone = 15,5px). */
+.nav__link--child {
+  padding: 6px 8px 6px 26px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  position: relative;
+}
+
+/* Vertical guide line and dot for child rows */
+.nav__link--child::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--line);
+}
+.nav__link--child::after {
+  content: '';
+  position: absolute;
+  left: 13.5px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--ink-4);
+}
+
+.nav__link--child:hover {
+  background: var(--surface-3);
+  color: var(--ink);
+}
+
+.nav__link--child.nav__link--active {
+  background: var(--surface);
+  color: var(--ink);
+  font-weight: 500;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.nav__link--child.nav__link--active::after { background: var(--accent); }
+
+/* =============================================================================
+   USER CARD (sidebar footer)
+   ============================================================================= */
+
+.app__sidebar-footer {
+  border-top: 1px solid var(--line);
+  padding: 10px 12px;
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px;
+}
+
+.user-card__avatar {
+  width: 28px;
+  height: 28px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  border-radius: 50%;
+  letter-spacing: -0.02em;
+}
+
+.user-card__info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.user-card__name {
+  font-size: 12.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--ink);
+}
+
+.user-card__signout {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: 11px;
+  color: var(--ink-3);
+  text-align: left;
+  margin-top: 2px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.user-card__signout:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.user-card__form { margin: 0; }
+
+/* =============================================================================
+   PAGE HEADER (acts as topbar for each screen)
+   ============================================================================= */
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--s-4);
+  padding-bottom: var(--s-5);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--s-6);
+}
+
+.page-header > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.page-header__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.page-header__subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.5;
+  max-width: 720px;
+}
+
+.page-header__subtitle code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: var(--r-sm);
+  color: var(--ink);
+}
+
+.page-header__actions {
+  display: flex;
+  gap: var(--s-2);
+  align-items: center;
+}
+
+/* =============================================================================
+   SECTION HEADER
+   ============================================================================= */
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: var(--s-8) 0 var(--s-3);
+}
+
+.section-header__title {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+
+/* =============================================================================
+   BUTTONS
+
+   Default `.button` = primary (ink bg). Use `.button--ghost` for the neutral
+   surface variant. This matches existing markup which often uses `.button`
+   alone for the main action.
+   ============================================================================= */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--control-h);
+  padding: 7px 12px;
+  background: var(--ink);
+  color: var(--bg);
+  border: 1px solid var(--ink);
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: var(--r-md);
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast);
+  white-space: nowrap;
+  text-decoration: none;
+  letter-spacing: -0.005em;
+}
+
+.button:hover {
+  background: oklch(0.28 0 0);
+  border-color: oklch(0.28 0 0);
+  color: var(--bg);
+  text-decoration: none;
+}
+
+.button:active { transform: translateY(0.5px); }
+
+.button--ghost {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.button--ghost:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--line-2);
+}
+
+/* Botão só com ícone, quadrado na altura dos outros. */
+.button--icon {
+  width: var(--control-h);
+  padding: 0;
+}
+
+/* Copiar o link (layout/_site_link_actions.php): o ✓ toma o lugar do ícone
+   por um instante depois de copiar. */
+.copy-link__done { display: none; }
+.copy-link.is-copied .copy-link__copy { display: none; }
+.copy-link.is-copied .copy-link__done { display: inline; }
+
+.button--danger {
+  background: var(--err);
+  border-color: var(--err);
+  color: var(--bg);
+}
+
+.button--danger:hover {
+  background: oklch(0.48 0.20 25);
+  border-color: oklch(0.48 0.20 25);
+}
+
+.button--small {
+  height: auto;
+  padding: 4px 9px;
+  font-size: 12px;
+  border-radius: var(--r-sm);
+}
+
+/* =============================================================================
+   INPUTS
+   ============================================================================= */
+
+.input {
+  width: 100%;
+  height: var(--control-h);
+  padding: 8px 11px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  border-radius: var(--r-md);
+  outline: 0;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+
+.input::placeholder { color: var(--ink-4); }
+
+.input:hover { border-color: var(--line-2); }
+
+.input:focus {
+  border-color: var(--ink);
+  box-shadow: var(--shadow-focus);
+}
+
+.input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Multi-line: a textarea grows with its rows, with or without the modifier. */
+textarea.input { height: auto; }
+
+.input--textarea {
+  resize: vertical;
+  min-height: 90px;
+  height: auto;
+  padding: 10px 11px;
+  line-height: 1.55;
+}
+
+.input--select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink-2) 50%),
+    linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
+  background-position: calc(100% - 14px) 50%, calc(100% - 9px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+/* =============================================================================
+   FIELDS
+   ============================================================================= */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: var(--s-5);
+  min-width: 0;
+}
+
+.field__label {
+  display: flex;
+  gap: 4px;
+  align-items: baseline;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+  letter-spacing: -0.005em;
+}
+
+.field__required { color: var(--err); font-weight: 600; }
+
+.field__help {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+/* Boolean field — Quartzo-style toggle pill */
+.boolean-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  transition: border-color var(--t-fast), background var(--t-fast);
+  user-select: none;
+}
+
+.boolean-field:hover { border-color: var(--line-2); }
+
+.boolean-field:has(input:checked) {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+  font-weight: 500;
+}
+
+.boolean-field input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--ink);
+  cursor: pointer;
+  margin: 0;
+}
+
+.boolean-field:has(input:checked) input { accent-color: var(--bg); }
+
+/* =============================================================================
+   FORMS
+   ============================================================================= */
+
+.form { max-width: 880px; }
+
+.form-row {
+  display: flex;
+  gap: var(--s-4);
+  margin-bottom: var(--s-5);
+}
+
+.form-row > .field { flex: 1; margin-bottom: 0; }
+
+/* O botão que fecha uma linha de campos ("Adicionar"): do tamanho dele, na
+   base da linha, junto dos campos. */
+.form-row > .form-row__action { flex: 0 0 auto; align-self: flex-end; }
+
+/* Meta block — sits above body fields, panel-style */
+.form-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  margin-bottom: var(--s-6);
+  padding: var(--s-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+
+/* Título na linha toda; slug, status e template na de baixo — sem linha
+   entre elas (items/edit.php). */
+.form-meta > .form-row,
+.form-meta > .field { margin-bottom: 0; }
+
+/* SEO block — built-in section auto-injected for paged content. Sits below
+   regular fields, before taxonomies / save bar. Styled as a panel so editors
+   immediately recognize it as a separate concern from content. */
+.form-seo {
+  margin-top: var(--s-8);
+  padding: var(--s-5);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  position: relative;
+}
+
+.form-seo__head {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--s-2);
+}
+
+.form-seo__title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Tiny accent dot before the title — anchors the block visually */
+.form-seo__title::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+.form-seo__sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+.form-seo > .field { margin-bottom: 0; }
+
+/* Sticky save bar — Quartzo's form-bar */
+.form-actions {
+  display: flex;
+  gap: var(--s-2);
+  align-items: center;
+  justify-content: flex-end;
+  padding: 12px var(--s-4);
+  margin-top: var(--s-6);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  position: sticky;
+  bottom: 16px;
+  z-index: 10;
+}
+
+/* =============================================================================
+   TABLE TOOLBAR (search + filters above lists)
+   ============================================================================= */
+
+.tbl-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: var(--s-3);
+  flex-wrap: wrap;
+}
+
+/* Search field — Quartzo style, surface-2 bg, icon + input */
+.tbl-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 360px;
+  padding: 6px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  color: var(--ink-3);
+  cursor: text;
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+
+.tbl-search:hover { border-color: var(--line-2); }
+
+.tbl-search:focus-within {
+  border-color: var(--ink);
+  background: var(--surface);
+  box-shadow: var(--shadow-focus);
+}
+
+.tbl-search svg {
+  flex-shrink: 0;
+  color: var(--ink-3);
+}
+
+.tbl-search input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  width: 100%;
+  font-size: 12.5px;
+  color: var(--ink);
+  padding: 0;
+}
+
+.tbl-search input::placeholder { color: var(--ink-4); }
+
+/* Right-side filter group */
+.tbl-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Botão só de ícone na barra de filtros (exclusão em massa).
+   Mesma caixa da .tbl-pill ao lado — mesma borda, mesmo raio, mesma altura —
+   porque os dois vivem na mesma linha e qualquer diferença de altura ali fica
+   evidente. A largura vem do padding horizontal (10px de cada lado, o mesmo
+   do lado esquerdo da .tbl-pill) em volta do ícone. */
+.tbl-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* `align-self: stretch` em vez de altura fixa: a barra alinha ao centro,
+     e o botão passa a acompanhar a altura da .tbl-pill ao lado seja qual
+     for o padding dela. Chumbar um valor dava 0,9px de diferença — pouco,
+     mas visível numa borda reta ao lado de outra. */
+  align-self: stretch;
+  /* Não `aspect-ratio: 1`: com a altura vinda do stretch, o botão ficava
+     estreito em volta do ícone. */
+  padding: 0 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color .12s, background .12s, border-color .12s;
+}
+
+.tbl-icon-btn:hover {
+  background: var(--surface-2);
+  border-color: var(--line-2);
+  color: var(--danger);
+}
+
+.tbl-icon-btn:focus-visible {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: var(--shadow-focus);
+}
+
+/* Ativo: a lista está em modo seleção. A classe vem do JS, no próprio botão —
+   ele vive FORA do container que recebe `is-bulk-active`, então não herda. */
+.tbl-icon-btn.is-active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+
+/* Pill-style filter — label + native select. The select is styled
+   transparent so it matches the pill, but stays a real <select> for
+   accessibility (keyboard, native dropdown). */
+.tbl-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px 6px 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  font-size: 12.5px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: border-color var(--t-fast), background var(--t-fast);
+}
+
+.tbl-pill:hover {
+  background: var(--surface-2);
+  border-color: var(--line-2);
+}
+
+.tbl-pill:focus-within {
+  border-color: var(--ink);
+  box-shadow: var(--shadow-focus);
+}
+
+.tbl-pill__label {
+  color: var(--ink-3);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.tbl-pill__select {
+  appearance: none;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  font-size: 12.5px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0 18px 0 0;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--ink-2) 50%),
+    linear-gradient(135deg, var(--ink-2) 50%, transparent 50%);
+  background-position: calc(100% - 6px) 50%, calc(100% - 2px) 50%;
+  background-size: 4px 4px, 4px 4px;
+  background-repeat: no-repeat;
+}
+
+.tbl-pill__select:focus { outline: 0; }
+
+/* "Limpar" — only shown when filters are active */
+.tbl-clear {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--ink-3);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-sm);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--t-fast), background var(--t-fast);
+}
+
+.tbl-clear:hover {
+  color: var(--ink);
+  background: var(--surface-3);
+  text-decoration: none;
+}
+
+/* =============================================================================
+   TABLES
+   ============================================================================= */
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.table thead th {
+  text-align: left;
+  padding: 10px 14px;
+  font-size: 11.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.table tbody td {
+  padding: var(--row-pad);
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+  background: var(--surface);
+  transition: background var(--t-fast);
+}
+
+.table tbody tr:last-child td { border-bottom: 0; }
+
+/* Toda tabela do painel vem dentro de um .table-scroll: numa tela estreita
+   ela rola de lado ali dentro, em vez de esticar a página inteira. Quando
+   cabe, o contêiner não aparece. (Rolar a própria <table> com display:block
+   a deixaria estreita quando o conteúdo é curto.) */
+.table-scroll { overflow-x: auto; }
+.table tbody tr:hover td { background: var(--surface-2); }
+
+.table__title {
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+/*
+ * Action column: keep the td as a normal table-cell so the row's
+ * bottom border extends correctly across all columns. `display: flex`
+ * on a <td> breaks table-cell layout — the cell renders outside the
+ * table's border box, leaving the row separator misaligned.
+ *
+ * Instead, align children inline-style and space them with margins.
+ */
+.table__actions {
+  text-align: right;
+  white-space: nowrap;
+}
+.table__actions > * + * {
+  margin-left: 6px;
+}
+
+/* =============================================================================
+   BADGES (Quartzo pill style — dot + label)
+   ============================================================================= */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: var(--surface-2);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+
+.badge::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink-3);
+  flex-shrink: 0;
+}
+
+.badge--published {
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent-ink);
+}
+.badge--published::before { background: var(--ok); }
+
+.badge--draft {
+  background: var(--surface-2);
+  color: var(--ink-3);
+}
+.badge--draft::before { background: var(--ink-4); }
+
+.badge--danger {
+  background: var(--err-soft);
+  border-color: transparent;
+  color: var(--err-ink);
+}
+.badge--danger::before { background: var(--err); }
+
+/* =============================================================================
+   CARDS (Quartzo-style KPI panels)
+   ============================================================================= */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--s-3);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--card-pad);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  text-decoration: none;
+  position: relative;
+}
+
+/* min-height is only meaningful for cards laid out in a grid (the
+   dashboard tiles), where uniform height matters visually. Standalone
+   cards (e.g., form submission entries) size to their content. */
+.cards > .card {
+  min-height: 110px;
+}
+
+.card:hover {
+  border-color: var(--line-2);
+  box-shadow: var(--shadow-md);
+  text-decoration: none;
+}
+
+.card__label {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+.card__value {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-feature-settings: "tnum";
+  color: var(--ink);
+}
+
+.card__title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1.3;
+  margin: 0;
+  color: var(--ink);
+}
+
+.card__meta {
+  margin-top: auto;
+  font-size: 12px;
+  color: var(--ink-3);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card__meta-arrow {
+  margin-left: auto;
+  transition: transform var(--t-fast);
+  font-size: 14px;
+  color: var(--ink-4);
+}
+
+.card:hover .card__meta-arrow {
+  transform: translateX(2px);
+  color: var(--ink);
+}
+
+/* =============================================================================
+   FLASH (alerts)
+   ============================================================================= */
+
+.flash {
+  padding: 10px 14px;
+  margin-bottom: var(--s-4);
+  font-size: 12.5px;
+  border-radius: var(--r-md);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-weight: 500;
+  border: 1px solid;
+}
+
+.flash::before {
+  font-size: 11px;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--bg);
+}
+
+.flash--success {
+  background: var(--accent-soft);
+  border-color: transparent;
+  color: var(--accent-ink);
+}
+.flash--success::before {
+  content: '✓';
+  background: var(--ok);
+}
+
+.flash--error {
+  background: var(--err-soft);
+  border-color: transparent;
+  color: var(--err-ink);
+}
+.flash--error::before {
+  content: '!';
+  background: var(--err);
+}
+
+.flash--warning {
+  background: oklch(0.68 0.14 70 / 0.12);
+  border-color: transparent;
+  color: var(--ink);
+}
+.flash--warning::before {
+  content: '!';
+  background: var(--warn);
+}
+
+/* =============================================================================
+   EMPTY STATE
+   ============================================================================= */
+
+.empty {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: var(--s-12) var(--s-8);
+  text-align: center;
+  color: var(--ink-3);
+  font-size: 13px;
+  border-radius: var(--r-lg);
+}
+
+.empty a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 500;
+}
+
+/* =============================================================================
+   AUTH (login)
+   ============================================================================= */
+
+.auth-shell {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: var(--s-6);
+}
+
+.auth { width: min(100%, 400px); }
+
+.auth__panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  padding: var(--s-8);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+}
+
+.auth__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.auth__brand-mark {
+  width: 40px;
+  height: 40px;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-lg);
+}
+
+.auth__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: center;
+  background: var(--surface-2);
+  margin: calc(var(--s-8) * -1) calc(var(--s-8) * -1) 0;
+  padding: var(--s-6) var(--s-8);
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
+}
+
+.auth__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+.auth__subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.auth__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+
+.auth__form .field { margin: 0; }
+
+.auth__submit {
+  width: 100%;
+  margin-top: var(--s-2);
+  padding: 9px 12px;
+}
+
+.auth__error {
+  font-size: 12.5px;
+  color: var(--err-ink);
+  padding: 8px 12px;
+  background: var(--err-soft);
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.auth__error::before {
+  content: '!';
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  background: var(--err);
+  color: var(--bg);
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.auth__footer {
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-3);
+  margin-top: var(--s-3);
+}
+
+.auth__signature {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.auth__signature a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* =============================================================================
+   IMAGE FIELD
+   ============================================================================= */
+
+.image-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  align-items: flex-start;
+}
+
+.image-field__preview { width: 100%; max-width: 480px; }
+
+.image-field__current {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  background: var(--surface);
+  width: 100%;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  transition: border-color var(--t-fast);
+}
+
+.image-field__current:hover { border-color: var(--line-2); }
+
+.image-field__current-img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+  border-radius: var(--r-md);
+}
+
+.image-field__current-doc {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+  border-radius: var(--r-md);
+}
+
+.image-field__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  min-width: 0;
+}
+
+.image-field__meta strong {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.image-field__meta .muted {
+  font-size: 11px;
+  color: var(--ink-4);
+}
+
+.image-field__actions { display: flex; gap: var(--s-2); }
+
+/* =============================================================================
+   GALLERY FIELD
+   ============================================================================= */
+
+.gallery-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.gallery-field__items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--s-2);
+}
+
+.gallery-field__items:empty { display: none; }
+
+.gallery-field__empty {
+  margin: 0;
+  padding: var(--s-4);
+  text-align: center;
+  color: var(--ink-4);
+  font-size: 13px;
+  background: var(--surface-2, var(--surface));
+  border: 1px dashed var(--line);
+  border-radius: var(--r-md);
+}
+
+.gallery-field__item {
+  position: relative;
+  aspect-ratio: 1;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--surface);
+  cursor: grab;
+  transition: transform 120ms ease, box-shadow 120ms ease, opacity 120ms ease, border-color 120ms ease;
+}
+
+.gallery-field__item:hover { border-color: var(--line-2); }
+.gallery-field__item:active { cursor: grabbing; }
+
+.gallery-field__item.is-dragging {
+  opacity: 0.4;
+  transform: scale(0.96);
+}
+
+/* Drop indicator: a thick left border on the target item. Works for the
+   typical "drop on the left half" insertion; the right-half case is
+   visually conveyed by the next sibling lighting up as you cross the
+   midpoint. Subtle but consistent. */
+.gallery-field__item.is-drag-over {
+  border-color: var(--accent, var(--ink-1));
+  box-shadow: inset 3px 0 0 0 var(--accent, var(--ink-1));
+}
+
+.gallery-field__thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none; /* let drag events hit the .item, not the img */
+}
+
+.gallery-field__doc {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2, var(--surface));
+  color: var(--ink-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+.gallery-field__remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 120ms ease, background 120ms ease;
+}
+
+.gallery-field__item:hover .gallery-field__remove,
+.gallery-field__remove:focus-visible {
+  opacity: 1;
+}
+
+.gallery-field__remove:hover { background: rgba(220, 38, 38, 0.9); }
+
+.gallery-field__actions { display: flex; gap: var(--s-2); }
+
+/* =============================================================================
+   FLEXIBLE CONTENT FIELD
+   ============================================================================= */
+
+.flexible-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.flexible-field__rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.flexible-field__rows:empty { display: none; }
+
+.flexible-field__empty {
+  margin: 0;
+  padding: var(--s-4);
+  text-align: center;
+  color: var(--ink-4);
+  font-size: 13px;
+  background: var(--surface-2, var(--surface));
+  border: 1px dashed var(--line);
+  border-radius: var(--r-md);
+}
+
+.flexible-field__row {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  /* `clip`, e não só `hidden`: ver .richtext. */
+  overflow: hidden;
+  overflow: clip;
+  transition: opacity 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+}
+
+.flexible-field__row.is-dragging {
+  opacity: 0.5;
+}
+
+.flexible-field__row.is-drag-over {
+  border-color: var(--accent, var(--ink-1));
+  box-shadow: inset 0 3px 0 0 var(--accent, var(--ink-1));
+}
+
+.flexible-field__row-header {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  background: var(--surface-2, var(--surface));
+  border-bottom: 1px solid var(--line);
+  cursor: grab;
+  user-select: none;
+}
+
+.flexible-field__row-header:active { cursor: grabbing; }
+
+.flexible-field__row-handle {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink-4);
+  line-height: 1;
+}
+
+.flexible-field__row-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.flexible-field__row-spacer { flex: 1; }
+
+.flexible-field__row-toggle,
+.flexible-field__row-remove {
+  border: 0;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-sm, 4px);
+  line-height: 1;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.flexible-field__row-toggle:hover,
+.flexible-field__row-remove:hover {
+  background: var(--surface);
+  color: var(--ink-1);
+}
+
+.flexible-field__row-remove:hover { color: var(--danger, #dc2626); }
+
+.flexible-field__row-toggle {
+  transition: transform 120ms ease, background 120ms ease, color 120ms ease;
+}
+
+.flexible-field__row.is-collapsed .flexible-field__row-toggle {
+  transform: rotate(-90deg);
+}
+
+.flexible-field__row.is-collapsed .flexible-field__row-header {
+  border-bottom: 0;
+}
+
+.flexible-field__row-body {
+  padding: var(--s-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.flexible-field__row.is-collapsed .flexible-field__row-body {
+  display: none;
+}
+
+.flexible-field__add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.flexible-field__add-label {
+  font-size: 12px;
+  color: var(--ink-4);
+  font-weight: 500;
+}
+
+/* =============================================================================
+   RICH TEXT
+   ============================================================================= */
+
+.richtext {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  /* O corte é só para os cantos arredondados. `clip` corta igual ao `hidden`
+     sem virar contêiner de rolagem: com `hidden`, a barra (sticky) grudava
+     nesta caixa, que não rola, e saía da tela junto com o começo do texto.
+     O `hidden` fica para o navegador sem `clip` (Safari antes do 16): cantos
+     certos, barra sem grudar. O mesmo par está nas caixas que podem conter
+     um editor: .repeater__row, .flexible-field__row e .field-tabs. */
+  overflow: hidden;
+  overflow: clip;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  display: flex;
+  flex-direction: column;
+}
+
+.richtext:hover { border-color: var(--line-2); }
+
+.richtext:focus-within {
+  border-color: var(--ink);
+  box-shadow: var(--shadow-focus);
+}
+
+.richtext__toolbar {
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+/* A barra tem duas faixas: a de sempre e, embaixo, a da tabela — que só
+   aparece com o cursor numa tabela (FieldRenderer::renderRichtext,
+   updateToolbarState no admin.js). */
+.richtext__toolbar-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px;
+}
+.richtext__toolbar-row[hidden] { display: none; }
+/* As faixas de baixo (a dos blocos e a da tabela) se separam da de cima por
+   uma linha. */
+.richtext__toolbar-row ~ .richtext__toolbar-row {
+  align-items: center;
+  border-top: 1px solid var(--line);
+}
+
+.richtext__toolbar button {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 4px 9px;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--ink-3);
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  transition: all var(--t-fast);
+  min-width: 28px;
+}
+
+.richtext__toolbar button:hover {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--line);
+}
+
+.richtext__toolbar button.is-active {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+/* Tela de celular: quebrada em linhas, a barra tem quatro ou cinco delas, e
+   grudada no topo cobriria boa parte da tela. Aqui ela é uma linha só, que
+   rola de lado. */
+@media (max-width: 699px) {
+  .richtext__toolbar-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+  .richtext__toolbar-row > * { flex: none; }
+}
+
+.richtext__editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 240px;
+  cursor: text;
+}
+
+.richtext__editor .ProseMirror {
+  flex: 1;
+  padding: 14px 16px;
+  outline: none;
+  font-size: 14px;
+  line-height: 1.65;
+  cursor: text;
+}
+
+.richtext__editor .ProseMirror:focus,
+.richtext__editor .ProseMirror-focused { outline: none; }
+
+.richtext__editor .ProseMirror > p:first-child { margin-top: 0; }
+.richtext__editor .ProseMirror > *:last-child  { margin-bottom: 0; }
+
+.richtext__editor .ProseMirror p { margin: 0 0 var(--s-3); }
+.richtext__editor .ProseMirror h2 { font-size: 19px; margin: var(--s-4) 0 var(--s-2); font-weight: 600; letter-spacing: -0.015em; }
+.richtext__editor .ProseMirror h3 { font-size: 15px; margin: var(--s-3) 0 var(--s-2); font-weight: 600; letter-spacing: -0.01em; }
+.richtext__editor .ProseMirror a  { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; }
+.richtext__editor .ProseMirror ul,
+.richtext__editor .ProseMirror ol { padding-left: var(--s-5); margin: 0 0 var(--s-3); }
+.richtext__editor .ProseMirror blockquote {
+  margin: 0 0 var(--s-3);
+  padding-left: var(--s-4);
+  border-left: 2px solid var(--line-2);
+  color: var(--ink-3);
+}
+
+/* Um bloco do tema dentro do texto: cartão com a alça de arrastar, o nome,
+   um resumo, "Editar" e o × de remover — a cara da linha do repeater.
+   Não é a aparência do site — o HTML do bloco é do tema. */
+.richtext__editor .ProseMirror .richtext-block {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin: 0 0 var(--s-3);
+  padding: var(--s-2) var(--s-2) var(--s-2) var(--s-3);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  cursor: grab;
+  /* O cartão é uma peça só: selecionado, quem o mostra é a borda abaixo. Sem
+     isto, a seleção do editor pintava o texto dele com a cor do ::selection
+     do painel — o nome e o resumo verdes, e o "Editar" escuro no botão. */
+  user-select: none;
+}
+.richtext__editor .ProseMirror .richtext-block.ProseMirror-selectednode { border-color: var(--ink); }
+/* Com um nome longo em tela estreita, é o título que encolhe: o "Editar"
+   fica sempre à vista. */
+.richtext-block__title {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.richtext-block__handle {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--ink-4);
+  line-height: 1;
+}
+.richtext__editor .ProseMirror .richtext-block:active { cursor: grabbing; }
+.richtext-block__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  flex-shrink: 0;
+  margin-left: auto;
+  cursor: default;
+}
+.richtext-block__summary {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* O seletor inteiro, como o do cartão: com menos classes o tracejado perdia
+   para o `border` de lá. */
+.richtext__editor .ProseMirror .richtext-block.is-unavailable { border-style: dashed; }
+.richtext-block.is-unavailable .richtext-block__title { color: var(--ink-3); font-weight: 500; }
+
+
+.richtext__editor .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--ink-4);
+  pointer-events: none;
+  height: 0;
+  float: left;
+}
+
+/* Imagem no conteúdo (botão "Imagem" → biblioteca de mídia). No editor toda
+   imagem vira um node Figure com legenda opcional embaixo (legenda vazia não
+   vai pro HTML salvo). Clicar na imagem seleciona a figure — Backspace
+   remove imagem e legenda juntas. */
+.richtext__editor .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+.richtext__editor .ProseMirror figure {
+  margin: 0 0 var(--s-3);
+}
+.richtext__editor .ProseMirror figure.ProseMirror-selectednode img {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.richtext__editor .ProseMirror figcaption {
+  margin-top: 6px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+/* Placeholder da legenda vazia — só existe no editor (CSS), nunca no HTML.
+   ProseMirror preenche blocos vazios com um <br> próprio, daí :has em vez
+   de :empty. */
+.richtext__editor .ProseMirror figcaption:has(> br.ProseMirror-trailingBreak:only-child)::before {
+  content: 'Legenda (opcional)';
+  color: var(--ink-4);
+  pointer-events: none;
+  height: 0;
+  float: left;
+}
+
+/* =============================================================================
+   REPEATER
+   ============================================================================= */
+
+.repeater {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+
+.repeater__rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  counter-reset: repeater;
+}
+
+.repeater__row {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 0;
+  counter-increment: repeater;
+  transition: border-color var(--t-fast), opacity 120ms ease, box-shadow 120ms ease;
+  /* `clip`, e não só `hidden`: ver .richtext. */
+  overflow: hidden;
+  overflow: clip;
+}
+
+.repeater__row.is-dragging { opacity: 0.5; }
+
+.repeater__row.is-drag-over {
+  border-color: var(--accent, var(--ink-1));
+  box-shadow: inset 0 3px 0 0 var(--accent, var(--ink-1));
+}
+
+.repeater__row:hover { border-color: var(--line-2); }
+
+/* `hidden` tem que vencer qualquer display explícito. Sem isto, um
+   [hidden] em elemento com `display: flex` (todo `.field` do admin) não
+   esconde nada — o atributo só traz `display: none` do stylesheet do
+   navegador, que perde para qualquer regra do autor. */
+[hidden] { display: none !important; }
+
+/* Tabela reordenável (data-sortable-table). Mesma linguagem visual do
+   repetidor, adaptada ao que <tr> aceita: box-shadow inset não desenha
+   confiavelmente em linha de tabela entre navegadores, então a marca de
+   destino é border-top na primeira célula. */
+[data-sortable-table] > tr[draggable="true"] { cursor: grab; }
+[data-sortable-table] > tr.is-dragging { opacity: 0.5; }
+[data-sortable-table] > tr.is-drag-over > td {
+  border-top: 2px solid var(--accent, var(--ink-1));
+}
+[data-sortable-table].is-saving { opacity: 0.6; pointer-events: none; }
+
+.sortable-handle {
+  display: inline-flex;
+  color: var(--ink-4);
+  cursor: grab;
+}
+.sortable-handle:active { cursor: grabbing; }
+
+/* Real header element (was a CSS ::before) so rows can collapse like
+   flexible rows do — the counter label now lives on the title span. */
+.repeater__row-header {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 6px 8px 6px 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  cursor: grab;
+  user-select: none;
+}
+
+.repeater__row-header:active { cursor: grabbing; }
+
+.repeater__row-handle {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink-4);
+  line-height: 1;
+}
+
+/* `:empty` é o interruptor entre os dois modos de rótulo. Sem `title_field`
+   (ou com o campo em branco) o PHP deixa o span vazio e o contador aparece —
+   e por ser contador de CSS ele se renumera sozinho ao arrastar e ao excluir,
+   sem JS nenhum. Preenchido, o texto do campo substitui o número. */
+.repeater__row-title:empty::before {
+  content: 'Item ' counter(repeater, decimal-leading-zero);
+}
+
+.repeater__row-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 500;
+  /* O rótulo agora carrega texto do usuário, de comprimento imprevisível:
+     corta em vez de empurrar os botões da direita pra fora. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
+}
+
+.repeater__row-spacer { flex: 1; }
+
+.repeater__row-toggle,
+.repeater__remove,
+.richtext-block__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  color: var(--ink-4);
+  transition: all var(--t-fast);
+}
+
+.repeater__row-toggle:hover { background: var(--surface-3); color: var(--ink-1); }
+
+.repeater__remove:hover,
+.richtext-block__remove:hover {
+  background: var(--err);
+  color: var(--bg);
+}
+
+.repeater__row-toggle { transition: transform 120ms ease, background 120ms ease, color 120ms ease; }
+.repeater__row.is-collapsed .repeater__row-toggle { transform: rotate(-90deg); }
+.repeater__row.is-collapsed .repeater__row-header { border-bottom: 0; }
+.repeater__row.is-collapsed .repeater__row-body { display: none; }
+
+.repeater__row-body {
+  padding: var(--s-4);
+}
+
+.repeater__row-body > .field {
+  margin-bottom: var(--s-3);
+}
+.repeater__row-body > .field:last-child {
+  margin-bottom: 0;
+}
+
+.repeater [data-repeater-add] {
+  align-self: flex-start;
+  padding: 6px 12px;
+  background: var(--surface-2);
+  color: var(--ink);
+  border: 1px dashed var(--line-2);
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--r-md);
+  transition: all var(--t-fast);
+  cursor: pointer;
+  font-family: inherit;
+}
+.repeater [data-repeater-add]:hover {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+  border-style: solid;
+}
+
+/* =============================================================================
+   MEDIA LIBRARY
+   ============================================================================= */
+
+.media-uploader { margin-bottom: var(--s-4); }
+
+/* Compacto: a chamada e o botão numa linha, os limites embaixo em letra
+   menor. A área inteira continua recebendo o arraste — é ela que ganha o
+   .is-dragover. */
+.media-uploader__drop {
+  border: 1px dashed var(--line-2);
+  padding: var(--s-3) var(--s-5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  transition: all var(--t-fast);
+}
+
+.media-uploader__drop.is-dragover {
+  border-color: var(--ink);
+  background: var(--surface-2);
+}
+
+.media-uploader__line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.media-uploader__line svg {
+  flex-shrink: 0;
+  color: var(--ink-3);
+}
+
+.media-uploader__drop strong {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.media-uploader__drop span {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.media-uploader__limits {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+.media-uploader__queue {
+  list-style: none;
+  margin: var(--s-3) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.media-uploader__queue-item {
+  padding: 7px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  font-size: 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-2);
+}
+
+.media-uploader__queue-item.is-success {
+  border-left: 3px solid var(--ok);
+}
+
+.media-uploader__queue-item.is-error {
+  border-left: 3px solid var(--err);
+  color: var(--err-ink);
+}
+
+/* Busca da biblioteca (página e seletor): a mesma caixa da busca das listas.
+   Enquanto a nova consulta não volta, os resultados atuais ficam esmaecidos —
+   o sinal de que digitar fez alguma coisa, sem spinner. */
+.media-search .tbl-search { max-width: 420px; }
+.media-results[aria-busy="true"] { opacity: .55; transition: opacity var(--t-fast); }
+
+.media-grid {
+  list-style: none;
+  margin: var(--s-5) 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--s-3);
+}
+
+.media-grid__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  min-width: 0;
+}
+
+.media-grid__tile {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  padding: 0;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all var(--t-fast);
+  border-radius: var(--r-md);
+}
+
+.media-grid__tile:hover {
+  border-color: var(--ink);
+  box-shadow: var(--shadow-md);
+}
+
+.media-grid__tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.media-grid__doc {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.media-grid__name {
+  font-size: 12px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pagination {
+  display: flex;
+  gap: 4px;
+  margin-top: var(--s-5);
+}
+
+.pagination__link {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  border-radius: var(--r-sm);
+  transition: all var(--t-fast);
+  color: var(--ink-2);
+}
+
+.pagination__link:hover {
+  border-color: var(--line-2);
+  background: var(--surface-2);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.pagination__link--active {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+/* Media detail panel */
+.media-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.media-panel[hidden] { display: none; }
+
+.media-panel__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  animation: fadeIn 0.18s ease-out;
+}
+
+.media-panel__body {
+  position: relative;
+  width: 420px;
+  max-width: 100%;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  padding: var(--s-5);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  animation: slideInRight 0.2s ease-out;
+  box-shadow: -8px 0 24px rgba(0, 0, 0, 0.06);
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideInRight { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.media-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--s-3);
+}
+
+.media-panel__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  word-break: break-all;
+  flex: 1;
+}
+
+.media-panel__close,
+.modal__close {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  width: 26px;
+  height: 26px;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: var(--r-sm);
+  color: var(--ink-3);
+  transition: all var(--t-fast);
+}
+
+.media-panel__close:hover,
+.modal__close:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+  border-color: var(--line-2);
+}
+
+.media-panel__preview {
+  width: 100%;
+  max-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.media-panel__preview img {
+  max-width: 100%;
+  max-height: 280px;
+  object-fit: contain;
+}
+
+.media-panel__meta {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 6px var(--s-3);
+  font-size: 12px;
+  margin: 0;
+}
+
+.media-panel__meta dt {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+.media-panel__meta dd {
+  margin: 0;
+  word-break: break-all;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink);
+}
+
+.media-panel__actions {
+  display: flex;
+  gap: var(--s-2);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--line);
+  margin-top: auto;
+}
+
+/* =============================================================================
+   MODAL
+   ============================================================================= */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  /* Smaller padding on mobile so the modal body uses more of the viewport;
+     desktop keeps a comfortable margin so users can still see the page
+     behind through the overlay. */
+  padding: var(--s-2);
+}
+@media (min-width: 700px) {
+  .modal { padding: var(--s-5); }
+}
+
+.modal[hidden] { display: none; }
+/* Uma janela por cima de outra (openModal): a de baixo some, sem perder o
+   tamanho e a rolagem, e a sombra da de cima já entra cheia — sem isso a
+   página clareava no fade e escurecia o dobro com as duas abertas. */
+.modal--covered { visibility: hidden; }
+.modal--stacked .modal__overlay { animation: none; }
+
+.modal__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  animation: fadeIn 0.15s ease-out;
+}
+
+.modal__body {
+  position: relative;
+  /*
+   * Sized for media-library-style content: needs room for a grid of
+   * thumbnails plus header chrome. 95vw caps it on small screens; the
+   * 1400px ceiling keeps it from spreading absurdly on ultrawide
+   * monitors (lines too long become hard to scan).
+   *
+   * Height is fixed (not just max-height) so the iframe inside has a
+   * predictable area to work with — no awkward scroll inside scroll.
+   */
+  width: min(95vw, 1400px);
+  height: min(90vh, 900px);
+  margin: auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.2s ease-out;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--line);
+}
+
+.modal__title {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal__content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+}
+
+.modal__iframe {
+  flex: 1;
+  border: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--surface);
+}
+
+/*
+ * Compact modal (a theme block from the text editor): narrow, and as tall as
+ * the page inside the iframe — admin.js (fitModalToContent) sets the iframe
+ * height from it — up to the same ceiling as the full modal; past that, the
+ * modal scrolls. While the page inside opens a modal of its own (the media
+ * library of an image field), it goes back to the full size, since the inner
+ * modal only sees the iframe's area.
+ */
+.modal--compact .modal__body {
+  width: min(95vw, 720px);
+  height: auto;
+  max-height: min(90vh, 900px);
+}
+.modal--compact .modal__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+.modal--compact .modal__iframe {
+  flex: none;
+  height: 120px; /* until the first page inside is measured */
+}
+
+/* =============================================================================
+   EMBED LAYOUT (picker)
+   ============================================================================= */
+
+.embed { background: var(--surface); }
+.embed__main { padding: var(--s-5); }
+
+.picker-header {
+  margin-bottom: var(--s-4);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--line);
+}
+
+.picker-header__title {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.picker-header__subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.media-grid[data-picker="1"] .media-grid__tile { cursor: pointer; }
+
+/* =============================================================================
+   SCROLLBAR
+   ============================================================================= */
+
+.nav::-webkit-scrollbar,
+.app__main::-webkit-scrollbar,
+.media-panel__body::-webkit-scrollbar { width: 10px; height: 10px; }
+
+.nav::-webkit-scrollbar-thumb,
+.app__main::-webkit-scrollbar-thumb,
+.media-panel__body::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 99px;
+  border: 2px solid var(--bg);
+}
+
+.nav::-webkit-scrollbar-thumb:hover,
+.app__main::-webkit-scrollbar-thumb:hover,
+.media-panel__body::-webkit-scrollbar-thumb:hover { background: var(--line-2); }
+
+/* Scrollbar do nav no sidebar escuro: thumb como overlay claro e a borda de
+   inset na cor do próprio sidebar (a regra base usa var(--bg), branco, que
+   virava um contorno claro estranho no escuro). */
+.app__sidebar .nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: #10101e;
+}
+.app__sidebar .nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+/* =============================================================================
+   RESPONSIVE
+   ============================================================================= */
+
+/*
+ * Hamburger toggle button — only visible on mobile.
+ * Hidden by default; the responsive media query reveals it.
+ */
+.app__menu-toggle {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 60;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  color: var(--ink);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  /* `left` entra aqui porque ele muda quando o menu abre (ver a regra no
+     bloco mobile): sem a transição o botão saltaria para a nova posição
+     enquanto a gaveta ainda está deslizando. */
+  transition: background var(--t-fast), border-color var(--t-fast), left var(--t-fast);
+}
+.app__menu-toggle:hover { background: var(--surface-2); }
+.app__menu-icon { display: block; }
+.app__menu-icon--close { display: none; }
+.app[data-app-menu="open"] .app__menu-icon--open { display: none; }
+.app[data-app-menu="open"] .app__menu-icon--close { display: block; }
+
+/*
+ * Backdrop — dim layer behind the open sidebar on mobile. Click to close.
+ * Hidden by default; only the open state on mobile reveals it.
+ */
+.app__backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 40;
+  opacity: 0;
+  transition: opacity var(--t-fast);
+}
+
+@media (max-width: 980px) {
+  /* Main occupies the whole viewport. Sidebar overlays from the left. */
+  .app {
+    grid-template-columns: 1fr;
+  }
+
+  /*
+   * Sidebar is off-canvas by default. The data-app-menu="open" attribute
+   * (toggled by JS) slides it back into view. Fixed-position so it doesn't
+   * push the main content; backdrop dims everything behind it.
+   */
+  .app__sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: min(280px, 80vw);
+    border-right: 1px solid var(--line);
+    border-bottom: 0;
+    transform: translateX(-100%);
+    transition: transform var(--t-fast);
+    z-index: 50;
+    overflow-y: auto;
+  }
+  .app[data-app-menu="open"] .app__sidebar {
+    transform: translateX(0);
+    box-shadow: 0 0 32px rgba(0, 0, 0, 0.18);
+  }
+
+  .app__menu-toggle { display: inline-flex; }
+
+  /* Com o menu aberto o botão vai para a borda DIREITA da gaveta. Ele é
+     `position: fixed`, então sem isto continuaria em `left: 12px` — que
+     deixa de ser um canto vazio e passa a ser exatamente em cima da marca
+     e do nome do site, como a gaveta desliza por baixo dele.
+
+     Um botão só, e não dois: o controle carrega `aria-expanded`,
+     `aria-controls` e um `aria-label` que alterna entre abrir e fechar.
+     Dois elementos poriam dois controles na navegação por teclado
+     falando do mesmo painel, e o estado teria que ser espelhado nos dois.
+
+     52px = os 40px do botão mais os 12px de respiro, o mesmo valor do
+     `left` fechado. A largura repete a da .app__sidebar logo acima; se
+     uma mudar, a outra vai junto. */
+  .app[data-app-menu="open"] .app__menu-toggle {
+    left: calc(min(280px, 80vw) - 52px);
+  }
+
+  .app[data-app-menu="open"] .app__backdrop {
+    display: block;
+    opacity: 1;
+  }
+
+  /* A barra do topo: o botão do menu é fixo, e sem um fundo atrás dele o
+     conteúdo passava por baixo ao rolar — o título da página ficava coberto.
+     Opaca, com os 12px + 40px + 12px do botão; fica acima do conteúdo e
+     abaixo do fundo escuro do menu aberto (z 40), da gaveta e do botão. */
+  .app::before {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: var(--bg);
+    z-index: 30;
+  }
+
+  /* O conteúdo começa abaixo da barra: 64px dela mais o respiro de sempre. */
+  .app__main {
+    padding: calc(64px + var(--s-5)) var(--s-5) var(--s-16);
+  }
+
+  /* E é abaixo dela que a barra do editor de texto gruda: em `top: 0` ficaria
+     escondida atrás desses 64px. Só dentro de .app — a janela de bloco
+     (layout embed) não tem a barra do topo. */
+  .app .richtext__toolbar { top: 64px; }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--s-3);
+  }
+}
+
+/* Tela de celular: numa linha de campos, um embaixo do outro — lado a lado
+   eles ficavam espremidos, com o rótulo quebrando em duas linhas. O botão
+   que fecha a linha vai para baixo, à esquerda. */
+@media (max-width: 699px) {
+  .form-row { flex-direction: column; }
+  .form-row > .form-row__action { align-self: flex-start; }
+}
+
+/* ───────────────────────── Field group (organizational) ─────────────────
+   Purely visual container around fields — children read/write the same
+   flat storage as top-level fields. Native <details>, so collapse works
+   with zero JS even inside freshly-cloned repeater rows.
+
+   Visual identity vs repeater/flexible: those represent stored rows
+   (solid surface cards with mono counters); a group is just chrome, so
+   it gets a quieter look — plain hairline border, uppercase summary. */
+
+.field-group {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  margin-bottom: var(--s-4);
+}
+
+.field-group__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+  list-style: none; /* hide the default disclosure triangle */
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.field-group__summary::-webkit-details-marker { display: none; }
+
+.field-group__summary:hover { color: var(--ink); }
+
+/* Chevron de qualquer <details> do admin: acordeão de campos, seção de
+   conversão, cartão de lead. Não é escopado em .field-group de propósito —
+   o cartão de lead é um <details class="card">, e amarrar a rotação ao
+   acordeão foi o que levou aquela lista a um "▾" digitado à mão. O markup
+   sai de FieldRenderer::chevron(). */
+.chevron {
+  display: inline-flex;
+  transition: transform var(--t-fast);
+  transform: rotate(-90deg); /* fechado: aponta pra direita */
+  color: var(--ink-3);
+}
+
+/* `> summary` direto: um <details> aninhado tem o chevron dentro do PRÓPRIO
+   summary, então abrir o de fora nunca gira o de dentro. */
+details[open] > summary .chevron {
+  transform: rotate(0deg); /* aberto: aponta pra baixo */
+}
+
+.field-group[open] > .field-group__summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.field-group__body {
+  padding: var(--s-4);
+}
+
+.field-group__body > .field { margin-bottom: var(--s-3); }
+.field-group__body > .field:last-child { margin-bottom: 0; }
+
+/* ───────────────────────── Field tabs (organizational) ──────────────────
+   Tab strip over field sets. Like groups, organizational only — all
+   tabs share the surrounding flat storage. Inactive panels stay in the
+   DOM (display:none) so their inputs still submit. */
+
+.field-tabs {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  margin-bottom: var(--s-4);
+  /* `clip`, e não só `hidden`: ver .richtext. */
+  overflow: hidden;
+  overflow: clip;
+}
+
+.field-tabs__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 6px 8px 0;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+}
+
+.field-tabs__tab {
+  appearance: none;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: var(--r-md) var(--r-md) 0 0;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color var(--t-fast), background var(--t-fast);
+  position: relative;
+  top: 1px;
+}
+
+.field-tabs__tab:hover { color: var(--ink); }
+
+.field-tabs__tab.is-active {
+  background: var(--surface);
+  border-color: var(--line);
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.field-tabs__panel {
+  display: none;
+  padding: var(--s-4);
+}
+
+.field-tabs__panel.is-active { display: block; }
+
+.field-tabs__panel > .field { margin-bottom: var(--s-3); }
+.field-tabs__panel > .field:last-child { margin-bottom: 0; }
+
+/* Campo link — empilha URL / título / "abrir em nova aba" com mini-labels. */
+/* URL, título e "nova aba" são UM campo composto, não três campos empilhados.
+   Sem a caixa eles se leem como independentes — e o rótulo do campo ("Botão de
+   CTA") fica órfão, longe do que descreve. Mesma receita de caixa de
+   .field-group e .repeater__row: consistência vale mais que um estilo próprio. */
+.link-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-3);
+    padding: var(--s-3);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+}
+
+/* `flex-end` alinha o checkbox pela base do INPUT, não pelo rótulo que está
+   acima dele — sem isso ele flutuaria na altura do texto "URL". */
+.link-field__row {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--s-2);
+    flex-wrap: wrap;
+}
+
+.link-field__sub {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-1);
+}
+
+/* `min-width` define onde o checkbox desce pra linha de baixo em vez de
+   espremer a URL: campo estreito (dentro de repetidor, coluna de form-row)
+   quebra em duas linhas em vez de virar um input de 40px. */
+.link-field__sub--grow {
+    flex: 1;
+    min-width: 220px;
+}
+
+.link-field__sub--aside {
+    flex: 0 0 auto;
+}
+
+.link-field__label {
+    font-size: 0.8125rem;
+    color: var(--ink-3, #6b7280);
+}
+
+/* Campo item — combobox com busca; o painel abre logo abaixo do campo. */
+.item-field {
+    position: relative;
+}
+.item-field [data-item-field-search] {
+    padding-right: 34px;
+}
+.item-field__clear {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--surface-3);
+    color: var(--ink-3);
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+}
+.item-field__clear:hover {
+    color: var(--ink);
+}
+.item-field__clear[hidden] {
+    display: none;
+}
+.item-field__menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 55;
+    max-height: 16rem;
+    overflow-y: auto;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: var(--shadow-sm);
+    padding: 4px;
+}
+.item-field__menu[hidden] {
+    display: none;
+}
+.item-field__option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    color: var(--ink);
+    font: inherit;
+    cursor: pointer;
+}
+.item-field__option:hover {
+    background: var(--surface-3);
+}
+.item-field__option.is-active {
+    background: var(--accent-soft);
+}
+.item-field__option[hidden] {
+    display: none;
+}
+.item-field__empty {
+    margin: 0;
+    padding: 8px 10px;
+    color: var(--ink-3);
+}
+/* O menu absoluto do campo item precisa escapar do overflow:hidden da linha de
+   repeater/flexible (que existe só pros cantos arredondados). Enquanto o menu
+   está aberto, libera o overflow da linha; ao fechar, volta a clipar. */
+.repeater__row:has(.item-field__menu:not([hidden])),
+.flexible-field__row:has(.item-field__menu:not([hidden])) {
+    overflow: visible;
+}
+
+/* Selecionada no seletor: borda preta de 2px — a de 1px do tile e mais 1px
+   por fora, que não encolhe a imagem — e um ✓ num círculo preto. Na galeria,
+   a biblioteca abre com o que já está nela selecionado — uma marca só,
+   esteja ou não lá antes; num campo de uma mídia, é a atual. */
+.media-grid__item.is-picked {
+    position: relative;
+}
+.media-grid__item.is-picked .media-grid__tile {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 1px var(--ink);
+}
+.media-grid__item.is-picked::after {
+    content: "";
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--ink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2l2.3 2.3 4.7-5' fill='none' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px no-repeat;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+}
+
+/* Rodapé do seletor de várias: quantas estão marcadas e "Selecionar", preso
+   no pé da janela enquanto a grade rola. Sangra até as bordas do .embed__main. */
+.picker-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-3);
+    margin: var(--s-4) calc(-1 * var(--s-5)) calc(-1 * var(--s-5));
+    padding: var(--s-3) var(--s-5);
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+}
+.picker-footer__count {
+    font-size: 13px;
+    color: var(--ink-3);
+}
+/* Sem nada marcado, "Selecionar" não tem o que entregar. */
+.picker-footer .button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Tile de vídeo na biblioteca — <video preload="metadata"> mostra o
+   primeiro frame sem thumbnail no servidor; pointer-events:none mantém o
+   clique no tile (abrir painel / pick). Badge ▶ informa que é vídeo. */
+.media-grid__video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+}
+.media-grid__item[data-media-category="video"] .media-grid__tile {
+    position: relative;
+}
+.media-grid__item[data-media-category="video"] .media-grid__tile::after {
+    content: "▶";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    pointer-events: none;
+}
+
+/* Preview de vídeo/áudio no painel de detalhe. */
+.media-panel__preview video,
+.media-panel__preview audio {
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Campo file — espelho visual do image-field pra qualquer mídia. */
+
+.file-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  align-items: flex-start;
+}
+
+.file-field__preview { width: 100%; max-width: 480px; }
+
+.file-field__current {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  background: var(--surface);
+  width: 100%;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  transition: border-color var(--t-fast);
+}
+
+.file-field__current:hover { border-color: var(--line-2); }
+
+.file-field__thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  display: block;
+  flex-shrink: 0;
+  border-radius: var(--r-md);
+}
+
+.file-field__doc {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink);
+  color: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+  border-radius: var(--r-md);
+}
+
+.file-field__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  min-width: 0;
+}
+
+.file-field__meta strong {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-field__meta .muted {
+  font-size: 11px;
+  color: var(--ink-4);
+}
+
+.file-field__actions { display: flex; gap: var(--s-2); }
+
+/* Elipse da janela compacta de paginação (layout/pagination.php). */
+.pagination__gap {
+    padding: 6px 4px;
+    font-size: 12px;
+    color: var(--ink-3);
+    user-select: none;
+}
+
+/* =============================================================================
+   RICH TEXT — CÓDIGO E TABELAS (apêndice)
+
+   Estilo pro código inline/bloco (Code/CodeBlock, já embutidos no
+   StarterKit) e pras tabelas simples (Table/TableRow/TableCell/TableHeader,
+   adicionadas ao bundle tiptap.js). Mantido separado do bloco RICH TEXT
+   original (mais acima neste arquivo) só pra não mexer em nenhuma regra
+   já existente do redesign em andamento — é puro apêndice.
+   ============================================================================= */
+
+/* Código inline — chip discreto, fonte mono, sem competir com o texto
+   corrido. Sem syntax highlight (StarterKit não traz um highlighter). */
+.richtext__editor .ProseMirror code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+/* Bloco de código — um tom mais escuro que o chip inline (surface-3) pra
+   ler como um bloco contido, não só mais uma palavra destacada. */
+.richtext__editor .ProseMirror pre {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: var(--s-3);
+  margin: 0 0 var(--s-3);
+  overflow-x: auto;
+}
+
+/* Dentro do <pre>, o <code> herda o fundo do bloco — sem este reset o
+   estilo do código inline duplicaria fundo/borda dentro do próprio bloco. */
+.richtext__editor .ProseMirror pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  border-radius: 0;
+}
+
+/* Tabelas. O .tableWrapper é gerado pelo próprio TipTap (renderHTML da
+   extensão Table) — existe só pra permitir scroll horizontal em tabelas
+   largas sem estourar o layout do editor. table-layout:fixed é o que faz
+   o resize de coluna (resizable:true, admin.js) respeitar a largura
+   arrastada em vez de recalcular pelo conteúdo. */
+.richtext__editor .ProseMirror .tableWrapper {
+  overflow-x: auto;
+  margin: 0 0 var(--s-3);
+}
+
+.richtext__editor .ProseMirror table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.richtext__editor .ProseMirror td,
+.richtext__editor .ProseMirror th {
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+  vertical-align: top;
+  position: relative;
+}
+
+.richtext__editor .ProseMirror th {
+  background: var(--surface-2);
+  font-weight: 600;
+  text-align: left;
+}
+
+/* Célula(s) selecionada(s) (seleção de bloco/drag do ProseMirror) — overlay
+   via ::after em vez de trocar o background direto, pra não brigar com o
+   background do <th>. */
+.richtext__editor .ProseMirror .selectedCell:after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent-soft-2);
+  pointer-events: none;
+}
+
+/* Handle de resize de coluna (arraste na borda direita da célula). */
+.richtext__editor .ProseMirror .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: -2px;
+  width: 4px;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+/* =============================================================================
+   BULK ACTIONS (exclusão em massa — items/index.php, terms/index.php)
+
+   A coluna de checkbox e a barra de ações ficam ocultas por padrão; o JS
+   (initBulkActions, admin.js) alterna a classe `is-bulk-active` no
+   container `.bulk-list` ao clicar em "Excluir em massa" — só troca
+   `display`, sem re-render.
+   ============================================================================= */
+
+.bulk-list__col {
+  display: none;
+  width: 1%;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.bulk-list.is-bulk-active .bulk-list__col {
+  display: table-cell;
+}
+
+.bulk-list__bar {
+  display: none;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--row-pad);
+  margin-bottom: var(--s-3);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+
+.bulk-list.is-bulk-active .bulk-list__bar {
+  display: flex;
+}
+
+.bulk-list__count {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+/* Os dois marcadores de spam nos preenchimentos.
+
+   Existiam na view desde a v3.7.3 sem nenhuma regra aqui: o link do topo
+   herdava `a { color: inherit }` e passava por texto comum, e a etiqueta era
+   um <span> nu. Ganharam estilo quando a v3.7.6 acrescentou o "É spam" na
+   linha — ali a classe cai num <button>, e sem reset o navegador desenha
+   caixa cinza com borda, que é o oposto de discreto. */
+.form-spam-link {
+  /* O reset é o que faz <a> e <button> saírem idênticos: a mesma classe
+     serve o link do topo e o botão da linha, e um botão sem isto herda
+     fundo, borda, padding e fonte do agente de usuário. */
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--ink-3);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color var(--t-fast);
+}
+
+.form-spam-link:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+/* A origem do bloqueio, ao lado da data: honeypot, turnstile ou manual.
+   Discreta de propósito — é procedência, não alerta. */
+.form-spam-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}

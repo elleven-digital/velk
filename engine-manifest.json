@@ -1,0 +1,44 @@
+{
+  "format_version": 1,
+  "_comment": "Authoritative declaration of what's engine code (overwritten on upgrade) versus user content (never touched). Read by velk:install + velk:upgrade skills. To inspect what an upgrade would touch, read engine_paths.",
+  "github_repo": "elleven-digital/velk",
+  "release_base_url": "https://releases.velkcms.com",
+  "engine_paths": [
+    "core/",
+    "config/",
+    "bin/",
+    "migrations/",
+    "index.php",
+    ".htaccess.example",
+    "nginx.conf.example",
+    "robots.txt.example",
+    ".env.example",
+    "README.md",
+    "AGENTS.md",
+    "CHANGELOG.md",
+    "docs/messages.md",
+    "LICENSE",
+    ".gitignore",
+    "engine-manifest.json"
+  ],
+  "user_paths": [
+    "theme/",
+    "storage/",
+    ".env",
+    ".htaccess",
+    "nginx.conf",
+    "robots.txt",
+    ".deploy/",
+    ".claude/",
+    ".velk-version"
+  ],
+  "post_install_cleanup": [
+    "migrations/",
+    "INSTALL.md",
+    "nginx.conf.example",
+    ".gitignore",
+    "engine-manifest.json"
+  ],
+  "min_php_version": "8.2",
+  "min_mysql_version": "5.7"
+}

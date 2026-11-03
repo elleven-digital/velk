@@ -1,0 +1,147 @@
+#!/usr/bin/env bash
+#
+# bin/release — publica um release limpo do engine Velk no endpoint público R2.
+#
+# Empacota um tarball IMUTÁVEL do engine (exatamente os engine_paths do
+# engine-manifest.json, extraídos do commit da TAG), calcula o sha256, regenera
+# o versions.json (manifesto de descoberta de versão lido pelas skills
+# velk:install/upgrade) e sobe os três artefatos pro Cloudflare R2. Com isso o
+# repo-fonte pode ser privado — a distribuição vive inteira no R2.
+#
+# Uso:
+#   bin/release [version] [--dry-run]
+#     version    ex.: v2.2.0  (default: conteúdo de core/VERSION)
+#     --dry-run  gera tudo em dist/, mas NÃO sobe nada
+#
+# Requisitos:
+#   sempre:  git, jq, tar, gzip, shasum (ou sha256sum)
+#   upload:  aws CLI (S3-compatível, contra o endpoint do R2)
+#
+# Credenciais (só upload real) — um .release.env gitignored na raiz do repo:
+#   R2_ENDPOINT="https://<accountid>.r2.cloudflarestorage.com"
+#   R2_BUCKET="velk-releases"
+#   RELEASE_BASE_URL="https://releases.velkcms.com"
+#   AWS_ACCESS_KEY_ID="..."
+#   AWS_SECRET_ACCESS_KEY="..."
+#   AWS_DEFAULT_REGION="auto"
+#
+set -euo pipefail
+
+cd "$(dirname "$0")/.."   # raiz do repo
+
+# ── args ────────────────────────────────────────────────────────────────────
+DRY_RUN=0
+VERSION=""
+for arg in "$@"; do
+  case "$arg" in
+    --dry-run) DRY_RUN=1 ;;
+    -*) echo "flag desconhecida: $arg" >&2; exit 2 ;;
+    *) VERSION="$arg" ;;
+  esac
+done
+[ -z "$VERSION" ] && VERSION="$(tr -d '[:space:]' < core/VERSION)"
+
+# ── config ──────────────────────────────────────────────────────────────────
+# release_base_url default vem do manifesto; .release.env pode sobrescrever.
+RELEASE_BASE_URL="$(jq -r '.release_base_url // "https://releases.velkcms.com"' engine-manifest.json)"
+# set -a: exporta tudo que o .release.env definir (AWS_*, R2_*), para que o
+# processo filho `aws` enxergue as credenciais — senão ficam locais ao shell.
+set -a
+# shellcheck disable=SC1091
+[ -f .release.env ] && source .release.env
+set +a
+
+# ── pré-requisitos ──────────────────────────────────────────────────────────
+for tool in git jq tar gzip curl; do
+  command -v "$tool" >/dev/null 2>&1 || { echo "ferramenta obrigatória faltando: $tool" >&2; exit 1; }
+done
+if command -v shasum >/dev/null 2>&1; then
+  sha256() { shasum -a 256 "$1" | awk '{print $1}'; }
+elif command -v sha256sum >/dev/null 2>&1; then
+  sha256() { sha256sum "$1" | awk '{print $1}'; }
+else
+  echo "ferramenta de sha256 faltando (shasum ou sha256sum)" >&2; exit 1
+fi
+
+# ── a tag precisa existir ───────────────────────────────────────────────────
+if ! git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
+  echo "tag git '$VERSION' não encontrada. Corte-a antes:" >&2
+  echo "  git tag $VERSION && git push --tags" >&2
+  exit 1
+fi
+
+# ── empacotar o engine a partir do commit da tag ────────────────────────────
+# engine_paths vem do manifesto DA PRÓPRIA TAG (git show), não do working-tree.
+# Assim cada release empacota exatamente o que aquela tag declarava — se o
+# manifesto do HEAD ganhou paths novos depois (ex.: LICENSE, adicionado após
+# v3.1.0), rebuildar uma tag antiga não quebra com "pathspec did not match".
+mkdir -p dist
+TAG_MANIFEST="$(git show "$VERSION:engine-manifest.json")" || {
+  echo "engine-manifest.json não encontrado na tag $VERSION" >&2; exit 1;
+}
+ENGINE_PATHS=()
+while IFS= read -r p; do
+  [ -n "$p" ] && ENGINE_PATHS+=("$p")
+done < <(jq -r '.engine_paths[]' <<< "$TAG_MANIFEST")
+[ ${#ENGINE_PATHS[@]} -gt 0 ] || { echo "engine_paths vazio/ausente no engine-manifest.json da tag $VERSION" >&2; exit 1; }
+
+TARBALL="dist/velk-$VERSION.tar.gz"
+git archive --format=tar --prefix="velk-$VERSION/" "$VERSION" -- "${ENGINE_PATHS[@]}" | gzip > "$TARBALL"
+echo "construído $TARBALL"
+
+SHA256="$(sha256 "$TARBALL")"
+echo "sha256 $SHA256"
+
+# ── regenerar versions.json (R2 é a fonte da verdade) ───────────────────────
+MIN_PHP="$(jq -r '.min_php_version // "8.2"' engine-manifest.json)"
+MIN_MYSQL="$(jq -r '.min_mysql_version // "5.7"' engine-manifest.json)"
+RELEASED="$(date -u +%Y-%m-%d)"
+# A lista publicada é a fonte da verdade. Se não der para lê-la, para aqui:
+# seguir com uma lista vazia publicaria só esta versão e apagaria as outras.
+CURRENT="$(curl -fsSL --max-time 10 "$RELEASE_BASE_URL/versions.json")" || {
+  echo "não consegui ler $RELEASE_BASE_URL/versions.json — nada foi publicado; tente de novo" >&2; exit 1; }
+echo "$CURRENT" | jq -e '.versions | type == "array"' >/dev/null 2>&1 || {
+  echo "$RELEASE_BASE_URL/versions.json não tem a lista de versões — nada foi publicado" >&2; exit 1; }
+echo "$CURRENT" | jq \
+  --arg v "$VERSION" \
+  --arg url "$RELEASE_BASE_URL/velk-$VERSION.tar.gz" \
+  --arg sha "$SHA256" \
+  --arg php "$MIN_PHP" \
+  --arg mysql "$MIN_MYSQL" \
+  --arg date "$RELEASED" \
+  '{
+     versions: ([{version:$v, url:$url, sha256:$sha, min_php:$php, min_mysql:$mysql, released:$date}]
+                + ((.versions // []) | map(select(.version != $v)))),
+     latest: $v
+   }' > dist/versions.json
+echo "gerado dist/versions.json (latest=$VERSION)"
+
+# ── upload (pulado no dry-run) ──────────────────────────────────────────────
+if [ "$DRY_RUN" -eq 1 ]; then
+  echo ""
+  echo "DRY RUN — nada enviado. Subiria para s3://${R2_BUCKET:-<bucket>}/:"
+  echo "  velk-$VERSION.tar.gz   (Cache-Control: public, max-age=31536000, immutable)"
+  echo "  velk-latest.tar.gz     (Cache-Control: public, max-age=300)"
+  echo "  versions.json            (Cache-Control: public, max-age=60, must-revalidate)"
+  echo "URLs públicas seriam:"
+  echo "  $RELEASE_BASE_URL/velk-$VERSION.tar.gz"
+  echo "  $RELEASE_BASE_URL/velk-latest.tar.gz"
+  echo "  $RELEASE_BASE_URL/versions.json"
+  exit 0
+fi
+
+# ── upload real — precisa de aws + credenciais ──────────────────────────────
+command -v aws >/dev/null 2>&1 || { echo "aws CLI não encontrada — instale (brew install awscli) para publicar de verdade." >&2; exit 1; }
+: "${R2_ENDPOINT:?defina R2_ENDPOINT no .release.env}"
+: "${R2_BUCKET:?defina R2_BUCKET no .release.env}"
+
+s3cp() { aws s3 cp --endpoint-url "$R2_ENDPOINT" "$@"; }
+s3cp "$TARBALL" "s3://$R2_BUCKET/velk-$VERSION.tar.gz" --cache-control "public, max-age=31536000, immutable"
+s3cp "$TARBALL" "s3://$R2_BUCKET/velk-latest.tar.gz"   --cache-control "public, max-age=300"
+s3cp dist/versions.json "s3://$R2_BUCKET/versions.json"  --cache-control "public, max-age=60, must-revalidate" --content-type "application/json"
+
+echo ""
+echo "publicado $VERSION"
+echo "  $RELEASE_BASE_URL/velk-$VERSION.tar.gz"
+echo "  $RELEASE_BASE_URL/velk-latest.tar.gz"
+echo "  $RELEASE_BASE_URL/versions.json"

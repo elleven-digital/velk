@@ -1,0 +1,1622 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+if (PHP_SAPI !== 'cli') {
+    fwrite(STDERR, "This script must be run from the command line.\n");
+    exit(1);
+}
+
+$rootPath = dirname(__DIR__);
+require_once $rootPath . '/core/Bootstrap.php';
+
+$args = array_slice($argv, 1);
+$command = $args[0] ?? 'help';
+$rest = array_slice($args, 1);
+
+// Parse --key=value flags from $rest
+$flags = [];
+$positional = [];
+foreach ($rest as $arg) {
+    if (str_starts_with($arg, '--')) {
+        $eq = strpos($arg, '=');
+        if ($eq === false) {
+            $flags[substr($arg, 2)] = true;
+        } else {
+            $flags[substr($arg, 2, $eq - 2)] = substr($arg, $eq + 1);
+        }
+    } else {
+        $positional[] = $arg;
+    }
+}
+
+/**
+ * Boot the app, handling SetupException so install-related commands keep working.
+ */
+$bootForInstall = function () use ($rootPath) {
+    Velk\Autoloader::register($rootPath);
+    require_once $rootPath . '/core/helpers.php';
+    Velk\Env::load($rootPath . '/.env');
+    $config = new Velk\Config($rootPath);
+
+    // Ensure DB exists, then construct App with relaxed auto-install
+    Velk\Installer::ensureDatabase($config->get('database'));
+
+    // We bypass App::register's auto-install gate by booting after DB exists.
+    // But App::register still runs the gate — to allow `install` to run when
+    // INITIAL_USER_* are missing, we provide a temporary env so the gate passes,
+    // then rely on the install command to create the user explicitly.
+    return null;
+};
+
+$commands = [
+    'help' => function () {
+        echo "Velk — CLI\n";
+        echo "Usage: bin/velk <command> [args] [--flags]\n\n";
+        echo "Setup:\n";
+        echo "  install                              Run a complete install (DB + migrations + user)\n";
+        echo "    --email=<email>                    Override INITIAL_USER_EMAIL from .env\n";
+        echo "    --password=<password>              Override INITIAL_USER_PASSWORD from .env\n";
+        echo "    --name=<name>                      Override INITIAL_USER_NAME from .env\n";
+        echo "  migrate                              Run pending migrations\n";
+        echo "  migrate:status                       Show pending migrations\n";
+        echo "  user:create <email> <pwd> <name>     Create a new admin user\n";
+        echo "  page:sync                            Create page records from site.json\n";
+        echo "  files:init                           Copy .htaccess.example, robots.txt.example into place\n";
+        echo "  schema:validate                      Validate site.json structure\n";
+        echo "  media:variants [--regen]             Regenerate the thumb + all declared field variants for every image (--regen rebuilds existing files)\n";
+        echo "  serve [port]                         Start built-in PHP server\n";
+        echo "  cleanup:login-attempts               Drop login_attempts older than --days=30\n";
+        echo "  cleanup:rate-limit-hits              Drop rate_limit_hits older than --days=30\n";
+        echo "  cleanup:spam-submissions             Drop antispam-blocked form submissions older than --days=30\n";
+        echo "  cleanup:incomplete-submissions       Drop unfinished multi-step submissions older than --days=30\n";
+        echo "  i18n:scan                            Scan theme + core for t() calls, register source strings\n";
+        echo "  i18n:scan-admin                      Lint __() usage in core/Admin (+ FieldRenderer, EmailOtpService) against lang/{en,pt,es}.php (CI gate)\n";
+        echo "  csp:check                            What strict CSP would block in the theme, plus security.csp in site.json\n";
+        echo "\nContent (items — posts, services, etc.):\n";
+        echo "  item:types                           List item types defined in site.json\n";
+        echo "  item:schema <type>                   Show field schema for a type\n";
+        echo "  item:list <type>                     List items (filter --status, --search, --limit)\n";
+        echo "  item:get <type> <slug-or-id>         Get a single item as JSON\n";
+        echo "  item:create <type> --json=<JSON>     Create a new item (JSON or --json-stdin)\n";
+        echo "  item:update <type> <slug> --json=… Partial update (merges into fields)\n";
+        echo "  item:publish <type> <slug>           Set status=published, stamp published_at\n";
+        echo "  item:unpublish <type> <slug>         Set status=draft\n";
+        echo "  item:delete <type> <slug> --confirm  Delete an item (destructive)\n";
+        echo "\nContent (pages — singular page entities like home, about):\n";
+        echo "  page:list                            List configured pages\n";
+        echo "  page:schema <key>                    Show field schema for a page\n";
+        echo "  page:get <key>                       Get current page data as JSON\n";
+        echo "  page:update <key> --json=<JSON>      Update page fields (merges)\n";
+        echo "\nCommon flags for content commands:\n";
+        echo "  --format=json                        Machine-readable output (default: text)\n";
+        echo "  --dry-run                            Validate without saving (create/update only)\n";
+        echo "  --json-stdin                         Read --json payload from stdin (avoids quoting hell)\n";
+        echo "\nForms:\n";
+        echo "  form:export <form-id>                Approved, completed submissions as CSV on stdout\n";
+        echo "    --cols=<a,b,@meta,@params>         Columns (default: the form's fields). @meta/@params = the groups\n";
+        echo "    --from=<YYYY-MM-DD>                First day (default: all dates)\n";
+        echo "    --to=<YYYY-MM-DD>                  Last day (default: all dates)\n";
+        echo "    --sep=<;|,>                        Separator (default: ;)\n";
+        echo "    --no-bom                           Omit the UTF-8 BOM (Excel needs it for accents)\n";
+        echo "\n";
+    },
+
+    'install' => function () use ($rootPath, $flags) {
+        Velk\Autoloader::register($rootPath);
+        require_once $rootPath . '/core/helpers.php';
+        Velk\Env::load($rootPath . '/.env');
+
+        $config = new Velk\Config($rootPath);
+        $dbConfig = $config->get('database');
+
+        echo "Velk — Install\n";
+        echo "──────────────────\n\n";
+
+        echo "1. Database `{$dbConfig['database']}` … ";
+        try {
+            Velk\Installer::ensureDatabase($dbConfig);
+            echo "OK\n";
+        } catch (\Throwable $e) {
+            echo "FAIL\n";
+            fwrite(STDERR, "   " . $e->getMessage() . "\n");
+            fwrite(STDERR, "   Check DB_HOST, DB_USERNAME, DB_PASSWORD in .env\n");
+            exit(1);
+        }
+
+        // Construct a minimal App (no session/auth — those are web-only)
+        $app = new Velk\App($config);
+        $app->db = new Velk\Database($dbConfig);
+
+        // Build user override from flags (override .env values when provided)
+        $userOverride = [];
+        if (isset($flags['email']))    $userOverride['email']    = (string) $flags['email'];
+        if (isset($flags['password'])) $userOverride['password'] = (string) $flags['password'];
+        if (isset($flags['name']))     $userOverride['name']     = (string) $flags['name'];
+
+        try {
+            $report = Velk\Installer::install($app, $userOverride);
+        } catch (\Throwable $e) {
+            fwrite(STDERR, "Install failed: " . $e->getMessage() . "\n");
+            exit(1);
+        }
+
+        $migCount = count($report['migrations']);
+        echo "2. Migrations: " . ($migCount === 0 ? 'up to date' : "{$migCount} applied") . "\n";
+        foreach ($report['migrations'] as $m) {
+            echo "   + {$m}\n";
+        }
+
+        $copied = $report['project_files_copied'] ?? [];
+        if ($copied !== []) {
+            echo "   Project files initialized:\n";
+            foreach ($copied as $f) {
+                echo "   + {$f}\n";
+            }
+        }
+
+        echo "3. Pages: " . ($report['pages_synced'] === 0 ? 'already synced' : "{$report['pages_synced']} added") . "\n";
+
+        if ($report['user_created'] !== null) {
+            echo "4. Initial user: {$report['user_created']}\n";
+            echo "\n✓ Installed.\n";
+            echo "  → Open /admin/login and sign in.\n";
+            return;
+        }
+
+        if ($report['user_skipped_reason'] === 'users_already_exist') {
+            echo "4. Initial user: skipped (database already has users)\n";
+            echo "\n✓ Already installed.\n";
+            return;
+        }
+
+        echo "4. Initial user: skipped (no credentials provided)\n";
+        echo "\n";
+        echo "  → Add INITIAL_USER_EMAIL and INITIAL_USER_PASSWORD to .env, then re-run.\n";
+        echo "  → Or:  ./bin/velk install --email=you@example.com --password=secret --name=\"Your Name\"\n";
+        exit(2);
+    },
+
+    'migrate' => function () use ($rootPath) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $migrator = new Velk\Migrator($app->db, $app->config->path('migrations'));
+        $applied = $migrator->migrate();
+        Velk\AutoMigrator::clearFlag($app->config->rootPath() . '/storage');
+        if ($applied === []) {
+            echo "Nothing to migrate.\n";
+            return;
+        }
+        foreach ($applied as $name) {
+            echo "Applied: {$name}\n";
+        }
+    },
+
+    'migrate:status' => function () use ($rootPath) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $path = $app->config->path('migrations');
+
+        // Um site instalado NÃO guarda os arquivos de migration: install e
+        // upgrade os removem depois de aplicar. Isso cria dois estados que
+        // `pending()` não distingue — sem arquivo nenhum ela devolve `[]`
+        // igual a "tudo aplicado".
+        //
+        // Dizer "all up to date" aqui seria falso negativo: o comando
+        // afirmaria com confiança algo que não verificou. Melhor dizer o que
+        // dá pra dizer e apontar onde estão as respostas reais.
+        if (!is_dir($path) || (glob($path . '/*.php') ?: []) === []) {
+            // tableExists() em vez de ensureTable(): sem a tabela, contar
+            // lançaria PDOException — o oposto do que este ramo existe para
+            // fazer, que é dar resposta legível quando não há o que comparar.
+            // E `migrate:status` é leitura; criar tabela aqui seria efeito
+            // colateral surpreendente num comando que só deveria informar.
+            $hasTable = $app->db->tableExists('migrations');
+            $applied = $hasTable
+                ? (int) $app->db->fetchColumn('SELECT COUNT(*) FROM migrations')
+                : null;
+            echo "Migration files are not present in this install.\n";
+            echo "They are removed once applied, so pending state cannot be verified here.\n\n";
+            if ($applied === null) {
+                echo "  Applied so far: none — the `migrations` table doesn't exist yet.\n";
+                echo "  This install has never been migrated. Run `bin/velk install`.\n";
+            } else {
+                echo "  Applied so far: {$applied} (table `migrations`)\n";
+            }
+
+            $versionFile = $app->config->rootPath() . '/.velk-version';
+            if (is_file($versionFile)) {
+                $meta = json_decode((string) file_get_contents($versionFile), true);
+                if (is_array($meta) && isset($meta['version'])) {
+                    echo "  Engine version: {$meta['version']} (.velk-version)\n";
+                }
+            }
+            echo "\nTo check for pending migrations, run an upgrade — it fetches the\n";
+            echo "release tarball, which carries the migration files.\n";
+            return;
+        }
+
+        $migrator = new Velk\Migrator($app->db, $path);
+        $pending = $migrator->pending();
+        if ($pending === []) {
+            echo "All migrations are up to date.\n";
+            return;
+        }
+        echo "Pending migrations:\n";
+        foreach ($pending as $file) {
+            echo "  - " . basename($file) . "\n";
+        }
+    },
+
+    'user:create' => function () use ($rootPath, $positional) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        [$email, $password, $name] = [$positional[0] ?? null, $positional[1] ?? null, $positional[2] ?? null];
+        if (!$email || !$password || !$name) {
+            fwrite(STDERR, "Usage: bin/velk user:create <email> <password> <name>\n");
+            exit(1);
+        }
+        $existing = Velk\Models\User::findByEmail($email);
+        if ($existing !== null) {
+            fwrite(STDERR, "User already exists: {$email}\n");
+            exit(1);
+        }
+        $user = Velk\Models\User::create($email, $password, $name);
+        echo "Created user #{$user->id}: {$user->email}\n";
+    },
+
+    'files:init' => function () use ($rootPath) {
+        // Copy `.example` templates into their live counterparts. Useful when
+        // a Velk update ships a new example file (e.g. robots.txt added later)
+        // and existing installs need to pick it up. Existing live files are
+        // preserved — this command never overwrites.
+        $app = Velk\Bootstrap::boot($rootPath);
+        $created = Velk\Installer::ensureProjectFiles($app);
+        if ($created === []) {
+            echo "All project files already in place — nothing to copy.\n";
+            return;
+        }
+        echo "Copied:\n";
+        foreach ($created as $f) {
+            echo "  + {$f}\n";
+        }
+    },
+
+    'page:sync' => function () use ($rootPath) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $pages = $app->config->pages();
+        $created = 0;
+        $updated = 0;
+        foreach ($pages as $key => $page) {
+            $title = (string) ($page['label'] ?? $key);
+            $existing = Velk\Models\Page::findByKey((string) $key);
+            if ($existing === null) {
+                Velk\Models\Page::upsert((string) $key, $title, []);
+                $created++;
+            } else {
+                if ($existing->title !== $title) {
+                    Velk\Models\Page::upsert((string) $key, $title, $existing->fields);
+                    $updated++;
+                }
+            }
+        }
+        echo "Pages synced. Created: {$created}, updated: {$updated}.\n";
+    },
+
+    'schema:validate' => function () use ($rootPath) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $issues = [];
+        $site = $app->config->site();
+
+        if (!isset($site['pages']) || !is_array($site['pages'])) {
+            $issues[] = 'site.json is missing "pages" object.';
+        }
+        if (!isset($site['item_types']) || !is_array($site['item_types'])) {
+            $issues[] = 'site.json is missing "item_types" object.';
+        }
+        if (!isset($site['taxonomies'])) {
+            $issues[] = 'site.json is missing "taxonomies" object (use {} if none).';
+        }
+
+        // `i18n.default_label` nomeia o idioma padrão no switcher e nas abas
+        // do painel. Só é exigido com i18n ligado: num site de um idioma só,
+        // nenhuma tela renderiza rótulo de idioma. Sem ele o rótulo vira o
+        // código cru ("pt-BR"), que é visível ao editor e ao visitante — daí
+        // ser erro de configuração e não algo que se descobre em produção.
+        if (!empty($site['i18n']['enabled'])) {
+            $defaultLabel = $site['i18n']['default_label'] ?? null;
+            if (!is_string($defaultLabel) || trim($defaultLabel) === '') {
+                $issues[] = 'site.json → i18n: "default_label" is required when i18n is enabled '
+                    . '(the display name of the default language, e.g. "Português"). '
+                    . 'Additional languages are named in /admin/languages; the default one is named here.';
+            }
+        }
+
+        foreach (($site['pages'] ?? []) as $key => $page) {
+            if (!isset($page['template'])) {
+                $issues[] = "Page \"{$key}\" is missing a template.";
+            }
+            // Subpáginas: "parent" deve apontar para OUTRA página JSON.
+            if (isset($page['parent'])) {
+                $parent = $page['parent'];
+                if (!is_string($parent) || $parent === '') {
+                    $issues[] = "Page \"{$key}\": \"parent\" must be a non-empty page key.";
+                } elseif ($parent === $key) {
+                    $issues[] = "Page \"{$key}\": cannot be its own parent.";
+                } elseif (!isset($site['pages'][$parent])) {
+                    $issues[] = "Page \"{$key}\": parent \"{$parent}\" is not a JSON page in site.json.";
+                }
+            }
+        }
+        // Detecção de ciclo na cadeia de pais das JSON pages.
+        foreach (($site['pages'] ?? []) as $key => $page) {
+            $seen = [];
+            $cur = (string) $key;
+            while (isset($site['pages'][$cur]['parent'])) {
+                $cur = (string) $site['pages'][$cur]['parent'];
+                if (!isset($site['pages'][$cur])) break; // ausência já reportada
+                if ($cur === (string) $key || isset($seen[$cur])) {
+                    $issues[] = "Page \"{$key}\": parent chain forms a cycle.";
+                    break;
+                }
+                $seen[$cur] = true;
+            }
+        }
+
+        $notFound = $site['not_found_page'] ?? null;
+        if ($notFound !== null) {
+            if (!is_string($notFound) || $notFound === '') {
+                $issues[] = '"not_found_page" must be a non-empty string (a page key).';
+            } elseif (!isset($site['pages'][$notFound])) {
+                $issues[] = "\"not_found_page\" points to a page that does not exist: \"{$notFound}\".";
+            }
+        }
+
+        // Shared by item_types and taxonomies: `template` (single) XOR
+        // `templates` (map of key => {label, file, fields?}) — has_page
+        // requires exactly one of the two; embed-only defs require
+        // neither. Per-template `fields` must be all-or-none across the
+        // map, and never mixed with a type-level `fields`.
+        $checkTemplates = function (string $label, array $def, bool $hasPage) use (&$issues): void {
+            $hasSingle = isset($def['template']);
+            $templates = $def['templates'] ?? null;
+            $hasList = is_array($templates) && $templates !== [];
+            if ($hasSingle && $hasList) {
+                $issues[] = "{$label}: define either `template` or `templates`, not both.";
+            }
+            if ($hasPage && !$hasSingle && !$hasList) {
+                $issues[] = "{$label}: missing a `template` or a `templates` list.";
+            }
+            if ($hasList) {
+                $withFields = 0;
+                foreach ($templates as $k => $entry) {
+                    if (!is_array($entry) || ($entry['label'] ?? '') === '' || ($entry['file'] ?? '') === '') {
+                        $issues[] = "{$label}: template \"{$k}\" needs a `label` and a `file`.";
+                    }
+                    if (is_array($entry) && array_key_exists('fields', $entry)) $withFields++;
+                }
+                $total = count($templates);
+                if ($withFields > 0 && $withFields < $total) {
+                    $issues[] = "{$label}: per-template fields must be set on ALL templates or none.";
+                }
+                if ($withFields === $total && isset($def['fields'])) {
+                    $issues[] = "{$label}: cannot mix per-template fields with a type-level `fields`.";
+                }
+            }
+        };
+
+        foreach (($site['item_types'] ?? []) as $type => $def) {
+            if (!is_array($def)) {
+                $issues[] = "Item type \"{$type}\": definition must be an object.";
+                continue;
+            }
+            // Embed-only types (has_page: false) have no public URL —
+            // template and slug are legitimately absent for them.
+            $hasPage = ($def['has_page'] ?? true) !== false;
+            $checkTemplates("Item type \"{$type}\"", $def, $hasPage);
+            if ($hasPage && !isset($def['slug'])) {
+                $issues[] = "Item type \"{$type}\" is missing a slug.";
+            }
+            if (isset($def['hierarchical']) && !is_bool($def['hierarchical'])) {
+                $issues[] = "Item type \"{$type}\": \"hierarchical\" must be true or false.";
+            }
+            if (isset($def['manual_order']) && !is_bool($def['manual_order'])) {
+                $issues[] = "Item type \"{$type}\": \"manual_order\" must be true or false.";
+            }
+        }
+        foreach (($site['taxonomies'] ?? []) as $tax => $def) {
+            if (!is_array($def)) {
+                $issues[] = "Taxonomy \"{$tax}\": definition must be an object.";
+                continue;
+            }
+            // has_page: false marks the taxonomy as embed-only (mirrors
+            // item_types) — no public URL, so no template is required.
+            $taxHasPage = ($def['has_page'] ?? true) !== false;
+            $checkTemplates("Taxonomy \"{$tax}\"", $def, $taxHasPage);
+            if (isset($def['hierarchical']) && !is_bool($def['hierarchical'])) {
+                $issues[] = "Taxonomy \"{$tax}\": \"hierarchical\" must be true or false.";
+            }
+            if (isset($def['manual_order']) && !is_bool($def['manual_order'])) {
+                $issues[] = "Taxonomy \"{$tax}\": \"manual_order\" must be true or false.";
+            }
+        }
+        // Pagamento: planos de assinatura, tipos vendáveis e moeda da loja.
+        // Nada disto era validado, e é o único recurso do engine em que um
+        // site.json errado só aparece com dinheiro de cliente do outro lado.
+        $plans = $site['members']['plans'] ?? [];
+        if ($plans !== [] && !is_array($plans)) {
+            $issues[] = '"members.plans" must be an object keyed by plan key.';
+            $plans = [];
+        }
+        foreach ((array) $plans as $planKey => $plan) {
+            if (!is_array($plan)) {
+                $issues[] = "Plan \"{$planKey}\": definition must be an object.";
+                continue;
+            }
+            if (!isset($plan['name']) || !is_string($plan['name']) || trim($plan['name']) === '') {
+                $issues[] = "Plan \"{$planKey}\" is missing a non-empty \"name\".";
+            }
+            if (isset($plan['intervals'])) {
+                $ivs = $plan['intervals'];
+                if (!is_array($ivs) || $ivs === [] || $ivs !== array_values($ivs)) {
+                    $issues[] = "Plan \"{$planKey}\": \"intervals\" must be a non-empty list.";
+                } else {
+                    foreach ($ivs as $iv) {
+                        if (!in_array($iv, ['month', 'year'], true)) {
+                            $issues[] = "Plan \"{$planKey}\": interval \"" . (is_scalar($iv) ? $iv : gettype($iv)) . "\" is not \"month\" or \"year\".";
+                        }
+                    }
+                }
+            }
+            if (isset($plan['features']) && (!is_array($plan['features']) || array_filter($plan['features'], fn($f) => !is_string($f)) !== [])) {
+                $issues[] = "Plan \"{$planKey}\": \"features\" must be a list of strings.";
+            }
+        }
+        $sellable = [];
+        foreach (($site['item_types'] ?? []) as $type => $def) {
+            if (!is_array($def)) {
+                continue;
+            }
+            if (isset($def['sellable'])) {
+                if (!is_bool($def['sellable'])) {
+                    $issues[] = "Item type \"{$type}\": \"sellable\" must be true or false.";
+                } elseif ($def['sellable']) {
+                    $sellable[] = $type;
+                }
+            }
+            // repeat_purchase só existe ao lado de sellable: true — em qualquer
+            // outro lugar é quase certamente engano, e o runtime ignora.
+            if (isset($def['repeat_purchase'])) {
+                if (!is_bool($def['repeat_purchase'])) {
+                    $issues[] = "Item type \"{$type}\": \"repeat_purchase\" must be true or false.";
+                } elseif (($def['sellable'] ?? false) !== true) {
+                    $issues[] = "Item type \"{$type}\": \"repeat_purchase\" has no effect without \"sellable\": true.";
+                }
+            }
+        }
+        if (isset($site['members']['multiple_plans']) && !is_bool($site['members']['multiple_plans'])) {
+            $issues[] = '"members.multiple_plans" must be true or false.';
+        }
+        if (isset($site['store']['currency'])) {
+            $cur = $site['store']['currency'];
+            if (!is_string($cur) || preg_match('/^[A-Z]{3}$/', $cur) !== 1) {
+                $issues[] = '"store.currency" must be a 3-letter uppercase ISO code (e.g. "BRL", "USD").';
+            }
+        }
+        // Meia-configuração: a chave secreta liga o checkout, mas sem o secret
+        // do webhook o Stripe cobra e o engine nunca fica sabendo. Só acusa
+        // quando o recurso está DECLARADO no site.json — site sem planos nem
+        // tipo vendável não precisa de Stripe nenhum.
+        $secret = (string) Velk\Env::get('STRIPE_SECRET_KEY', '');
+        if ($secret !== '') {
+            if ((array) $plans !== [] && (string) Velk\Env::get('STRIPE_WEBHOOK_SECRET', '') === '') {
+                $issues[] = 'STRIPE_SECRET_KEY is set and site.json declares members.plans, but STRIPE_WEBHOOK_SECRET is empty — checkout would charge and the engine would never learn about it. Create the webhook endpoint (/member/stripe-webhook) in Stripe and set its signing secret.';
+            }
+            if ($sellable !== [] && (string) Velk\Env::get('STRIPE_STORE_WEBHOOK_SECRET', '') === '') {
+                $issues[] = 'STRIPE_SECRET_KEY is set and site.json declares sellable item types, but STRIPE_STORE_WEBHOOK_SECRET is empty — orders would stay pending after payment. Create the store webhook endpoint (/store/stripe-webhook) in Stripe and set its signing secret.';
+            }
+        }
+
+        foreach (($site['forms'] ?? []) as $form => $def) {
+            if (!isset($def['fields']) || !is_array($def['fields']) || $def['fields'] === []) {
+                $issues[] = "Form \"{$form}\" is missing a non-empty 'fields' array.";
+            }
+            $names = [];
+            foreach ((array)($def['fields'] ?? []) as $i => $f) {
+                if (!isset($f['name'])) {
+                    $issues[] = "Form \"{$form}\" field #{$i} is missing 'name'.";
+                } else {
+                    $names[] = (string) $f['name'];
+                }
+            }
+            // 'preview_field' rotula o cartão fechado na lista de
+            // preenchimentos, e 'preview_subtitle_field' vai na linha de
+            // baixo, antes da data. Validados aqui porque em runtime um nome
+            // errado some em silêncio — o rótulo cai no fallback, o subtítulo
+            // simplesmente não aparece —, e a configuração fica ignorada sem
+            // aviso, que é o pior tipo de falha.
+            // 'keep_spam' liga a retenção dos bloqueados pelo antispam.
+            // Validado porque o erro típico é escrever "true" com aspas: em
+            // runtime a string "true" é truthy e funciona, mas "false" TAMBÉM
+            // é truthy — o site guardaria spam achando que desligou.
+            if (array_key_exists('keep_spam', $def) && !is_bool($def['keep_spam'])) {
+                $issues[] = "Form \"{$form}\": 'keep_spam' must be a boolean (true/false, unquoted).";
+            }
+            foreach (['preview_field', 'preview_subtitle_field'] as $key) {
+                if (!array_key_exists($key, $def)) {
+                    continue;
+                }
+                $preview = $def[$key];
+                if (!is_string($preview) || $preview === '') {
+                    $issues[] = "Form \"{$form}\": '{$key}' must be a non-empty field name.";
+                } elseif (!in_array($preview, $names, true)) {
+                    $issues[] = "Form \"{$form}\": '{$key}' points to \"{$preview}\", which is not a field of this form."
+                        . ($names === [] ? '' : ' Available: ' . implode(', ', $names) . '.');
+                }
+            }
+            // Etapas. Configuração errada aqui só apareceria em runtime como
+            // "envio reprovado sem motivo visível": um nome com typo sai da
+            // partição, o campo nunca é validado por etapa nenhuma, e o envio
+            // final reprova por obrigatório faltando. Este é o único lugar
+            // onde isso vira erro legível.
+            if (array_key_exists('steps', $def)) {
+                $steps = $def['steps'];
+                $wellFormed = is_array($steps) && $steps !== [] && $steps === array_values($steps);
+                if ($wellFormed) {
+                    foreach ($steps as $stepFields) {
+                        if (!is_array($stepFields) || $stepFields === []) { $wellFormed = false; break; }
+                        foreach ($stepFields as $n) {
+                            if (!is_string($n) || $n === '') { $wellFormed = false; break 2; }
+                        }
+                    }
+                }
+
+                if (!$wellFormed) {
+                    $issues[] = "Form \"{$form}\": 'steps' must be a list of lists of field names.";
+                } else {
+                    $seen = [];
+                    foreach ($steps as $i => $stepFields) {
+                        foreach ($stepFields as $n) {
+                            if (!in_array($n, $names, true)) {
+                                $issues[] = "Form \"{$form}\": step " . ($i + 1) . " names \"{$n}\", which is not a field of this form."
+                                    . ($names === [] ? '' : ' Available: ' . implode(', ', $names) . '.');
+                            } elseif (isset($seen[$n])) {
+                                $issues[] = "Form \"{$form}\": field \"{$n}\" appears in more than one step.";
+                            }
+                            $seen[$n] = true;
+                        }
+                    }
+                    // Campo fora de toda etapa nunca seria validado nem
+                    // gravado — o pior tipo de falha, porque o formulário
+                    // "funciona" e perde um campo em silêncio.
+                    foreach ($names as $n) {
+                        if (!isset($seen[$n])) {
+                            $issues[] = "Form \"{$form}\": field \"{$n}\" is not in any step.";
+                        }
+                    }
+                }
+            } elseif (array_key_exists('step_webhook', $def)) {
+                // Sem etapa não há o que disparar por etapa. Mesmo raciocínio
+                // do `repeat_purchase` sem `sellable`.
+                $issues[] = "Form \"{$form}\": 'step_webhook' has no effect without 'steps'.";
+            }
+        }
+        // Categorias de consentimento. O bloco é opcional; declarado, precisa
+        // estar correto — categoria com `mode` inválido é descartada em
+        // runtime, e o efeito seria um script marcado como bloqueado que na
+        // verdade nunca aparece em lugar nenhum. Silencioso demais.
+        if (isset($site['consent'])) {
+            if (!is_array($site['consent'])) {
+                $issues[] = 'site.json → consent: must be an object.';
+            } elseif (!array_key_exists('categories', $site['consent'])) {
+                // `enabled` sozinho é válido e é o caminho simples: o banner
+                // aprova ou recusa tudo de uma vez. Categorias declaradas são
+                // o que torna esse banner legível ao visitante ("Marketing"
+                // em vez de "Opcionais"), não um requisito.
+                if (empty($site['consent']['enabled'])) {
+                    $issues[] = 'site.json → consent: "enabled" must be true, or remove the block. '
+                        . 'The flag is the theme stating it has a banner the visitor can accept or refuse.';
+                }
+            } elseif (!is_array($site['consent']['categories'])) {
+                $issues[] = 'site.json → consent.categories: must be an object.';
+            } else {
+                // `enabled` é a afirmação de que o TEMA tem banner. Declarar
+                // categoria sem ela deixa a área de consentimento invisível no
+                // painel — o autor achou que configurou algo e não configurou.
+                if (empty($site['consent']['enabled'])) {
+                    $issues[] = 'site.json → consent: "enabled" must be true for the consent UI to appear. '
+                        . 'Categories alone do nothing — the flag is the theme stating it has a banner '
+                        . 'the visitor can accept or refuse.';
+                }
+                $cats = $site['consent']['categories'];
+                if ($cats === []) {
+                    $issues[] = 'site.json → consent.categories is empty — remove the "consent" block '
+                        . 'or declare at least one category.';
+                }
+                $hasRequired = false;
+                foreach ($cats as $catKey => $catDef) {
+                    $where = "site.json → consent.categories.\"{$catKey}\"";
+                    if (!is_array($catDef)) {
+                        $issues[] = "{$where}: must be an object with \"label\" and \"mode\".";
+                        continue;
+                    }
+                    $mode = $catDef['mode'] ?? null;
+                    if (!is_string($mode) || !in_array($mode, Velk\Config::CONSENT_MODES, true)) {
+                        $issues[] = "{$where}: \"mode\" must be one of: "
+                            . implode(', ', Velk\Config::CONSENT_MODES) . '.';
+                    } elseif ($mode === 'required') {
+                        $hasRequired = true;
+                    }
+                    if (!isset($catDef['label']) || !is_string($catDef['label']) || trim($catDef['label']) === '') {
+                        $issues[] = "{$where}: \"label\" is required (shown in the consent popup).";
+                    }
+                }
+                // Sem uma categoria `required` não há onde pôr o que não pode
+                // ser recusado — verificação de domínio, preconnect, o próprio
+                // cookie de consentimento. Quase sempre é esquecimento.
+                if (!$hasRequired && $cats !== []) {
+                    $issues[] = 'site.json → consent.categories: no category has mode "required". '
+                        . 'Scripts that must always load (domain verification, the consent cookie itself) '
+                        . 'would have nowhere to go.';
+                }
+            }
+        }
+
+        // A política de conteúdo do site público. Com um erro aqui o site
+        // segue no ar (vale o que sobrou válido, e o resto vai para o log),
+        // mas um modo digitado errado deixa o site no open sem ninguém
+        // perceber — e o bloco no lugar errado também, sem nem uma linha no
+        // log. O csp:check mostra também o que o estrito bloquearia no tema.
+        foreach (Velk\PublicCsp::resolve($site['security']['csp'] ?? null)['problems'] as $problem) {
+            $issues[] = $problem;
+        }
+        foreach (array_keys(is_array($site['security'] ?? null) ? $site['security'] : []) as $key) {
+            if ($key !== 'csp') {
+                $issues[] = "site.json → security: unknown key \"{$key}\" — the CSP settings go under security.csp.";
+            }
+        }
+        if (array_key_exists('csp', $site)) {
+            $issues[] = 'site.json: "csp" goes under "security" (security.csp) — ignored where it is.';
+        }
+
+        // Os blocos do tema no editor de texto: a declaração (`richtext_blocks`), o
+        // partial de cada um e as listas dos campos que os aceitam. Um erro
+        // aqui só apareceria tarde — o autor insere o bloco e ele não sai no
+        // site.
+        foreach (Velk\RichtextBlocks::validate($app->config) as $problem) {
+            $issues[] = $problem;
+        }
+
+        // Template declarado que não existe no tema, sem o de reserva
+        // (page.php, single.php, taxonomy.php): aquele endereço dá 404. É
+        // aviso, não erro — o site.json está certo e o resto do site
+        // funciona; quem roda a validação num deploy não é barrado por isso.
+        $warnings = Velk\ThemeTemplates::missing($app->config);
+
+        foreach (($site['options'] ?? []) as $opt => $def) {
+            if (!isset($def['fields']) || !is_array($def['fields'])) {
+                $issues[] = "Options page \"{$opt}\" is missing 'fields' array.";
+            }
+        }
+
+        // Structural validation of every fields list: group/tabs shape,
+        // missing names, and duplicate flat names (fields inside
+        // groups/tabs share storage with their siblings — a duplicate
+        // would silently overwrite on save). Repeater subfields and
+        // flexible layouts are validated recursively as fresh scopes.
+        // Validate the RESOLVED lists — `{"group": "x"}` include
+        // references get expanded into their real fields first (same
+        // expansion the admin does before rendering), so duplicates
+        // introduced BY an include are caught too. Broken references
+        // are flagged separately below.
+        $resolve = fn(array $fields): array => $app->config->resolveFields($fields);
+        $fieldLists = [];
+        foreach (($site['pages'] ?? []) as $key => $def) {
+            if (is_array($def['fields'] ?? null)) $fieldLists["Page \"{$key}\""] = $resolve($def['fields']);
+        }
+        foreach (($site['item_types'] ?? []) as $type => $def) {
+            if (is_array($def['fields'] ?? null)) $fieldLists["Item type \"{$type}\""] = $resolve($def['fields']);
+            foreach ((array) ($def['templates'] ?? []) as $tk => $tentry) {
+                if (is_array($tentry) && is_array($tentry['fields'] ?? null)) {
+                    $fieldLists["Item type \"{$type}\" template \"{$tk}\""] = $resolve($tentry['fields']);
+                }
+            }
+        }
+        foreach (($site['taxonomies'] ?? []) as $tax => $def) {
+            foreach ((array) ($def['templates'] ?? []) as $tk => $tentry) {
+                if (is_array($tentry) && is_array($tentry['fields'] ?? null)) {
+                    $fieldLists["Taxonomy \"{$tax}\" template \"{$tk}\""] = $resolve($tentry['fields']);
+                }
+            }
+        }
+        foreach (($site['options'] ?? []) as $opt => $def) {
+            if (is_array($def['fields'] ?? null)) $fieldLists["Options \"{$opt}\""] = $resolve($def['fields']);
+        }
+        // Os campos de um bloco do editor de texto passam pela mesma
+        // conferência dos outros (nome repetido, tipo de item que não existe).
+        foreach ($app->config->richtextBlocks() as $blockKey => $def) {
+            if (is_array($def['fields'] ?? null)) $fieldLists["Block \"{$blockKey}\""] = $resolve($def['fields']);
+        }
+
+        // Member fields are validated as the EFFECTIVE merged list the
+        // admin actually renders (globals + per-type), because that's
+        // the flat scope they share — a global "bio" colliding with a
+        // type-level "bio" is a real conflict even though they live in
+        // different site.json arrays. They go through $resolve too:
+        // includes are legal in member fields (memberFieldsFor()
+        // resolves them at runtime), so the validator must see the
+        // same expanded picture.
+        $memberGlobals = is_array($site['members']['fields'] ?? null) ? $site['members']['fields'] : [];
+        $memberTypes = (array) ($site['members']['types'] ?? []);
+        if ($memberTypes === []) {
+            if ($memberGlobals !== []) {
+                $fieldLists['Members'] = $resolve($memberGlobals);
+            }
+        } else {
+            // With types, each merged list covers the globals too — no
+            // separate global pass, to avoid repeating the same issue.
+            foreach ($memberTypes as $mt => $def) {
+                $typeFields = is_array($def['fields'] ?? null) ? $def['fields'] : [];
+                if ($memberGlobals !== [] || $typeFields !== []) {
+                    $fieldLists["Member type \"{$mt}\" (global + type fields)"] = $resolve(array_merge($memberGlobals, $typeFields));
+                }
+            }
+        }
+
+        // Broken include references — resolveFields drops them silently,
+        // so without this check a typo'd group name would just make its
+        // fields vanish from the admin with no signal.
+        $checkRefs = function (array $fields, string $where) use (&$issues, $app): void {
+            foreach ($fields as $f) {
+                if (is_array($f) && isset($f['group']) && !isset($f['type']) && !isset($f['name'])) {
+                    if ($app->config->fieldGroup((string) $f['group']) === null) {
+                        $issues[] = "{$where}: unknown field group reference \"{$f['group']}\" (not declared in field_groups).";
+                    }
+                }
+            }
+        };
+        foreach (($site['pages'] ?? []) as $key => $def) {
+            if (is_array($def['fields'] ?? null)) $checkRefs($def['fields'], "Page \"{$key}\"");
+        }
+        foreach (($site['item_types'] ?? []) as $type => $def) {
+            if (is_array($def['fields'] ?? null)) $checkRefs($def['fields'], "Item type \"{$type}\"");
+        }
+        foreach (($site['options'] ?? []) as $opt => $def) {
+            if (is_array($def['fields'] ?? null)) $checkRefs($def['fields'], "Options \"{$opt}\"");
+        }
+        if ($memberGlobals !== []) $checkRefs($memberGlobals, 'Members fields');
+        foreach ($memberTypes as $mt => $def) {
+            if (is_array($def['fields'] ?? null)) $checkRefs($def['fields'], "Member type \"{$mt}\"");
+        }
+        foreach ($app->config->richtextBlocks() as $blockKey => $def) {
+            if (is_array($def['fields'] ?? null)) $checkRefs($def['fields'], "Block \"{$blockKey}\"");
+        }
+
+        // `item` fields must reference a declared item_type — otherwise the
+        // selector silently offers nothing (the same silent-failure class the
+        // group-reference check above guards against). resolveFields already
+        // expanded {group} includes, so walk the resolved lists recursively
+        // into the nested containers (group/tabs/repeater/flexible).
+        $itemTypeKeys = array_keys((array) ($site['item_types'] ?? []));
+        $checkItemTypes = function (array $fields, string $where) use (&$checkItemTypes, &$issues, $itemTypeKeys): void {
+            foreach ($fields as $f) {
+                if (!is_array($f)) continue;
+                if (($f['type'] ?? null) === 'item') {
+                    $it = (string) ($f['item_type'] ?? '');
+                    $fname = (string) ($f['name'] ?? '?');
+                    if ($it === '') {
+                        $issues[] = "{$where}: item field \"{$fname}\" is missing \"item_type\".";
+                    } elseif (!in_array($it, $itemTypeKeys, true)) {
+                        $issues[] = "{$where}: item field \"{$fname}\" references unknown item_type \"{$it}\" (not declared in item_types).";
+                    }
+                }
+                if (is_array($f['fields'] ?? null)) $checkItemTypes($f['fields'], $where);
+                foreach ((array) ($f['tabs'] ?? []) as $tab) {
+                    if (is_array($tab['fields'] ?? null)) $checkItemTypes($tab['fields'], $where);
+                }
+                foreach ((array) ($f['layouts'] ?? []) as $layout) {
+                    if (is_array($layout['fields'] ?? null)) $checkItemTypes($layout['fields'], $where);
+                }
+            }
+        };
+        foreach ($fieldLists as $path => $fields) {
+            $checkItemTypes($fields, $path);
+        }
+
+        foreach ($fieldLists as $path => $fields) {
+            foreach (Velk\FieldRenderer::validateFields($fields, $path) as $issue) {
+                $issues[] = $issue;
+            }
+        }
+
+        // Image/gallery field `variants` — the public site.json contract for
+        // server-side sized image variants. Same approach as
+        // Config::imageVariants() (core/Config.php): walk the WHOLE $site
+        // tree recursively instead of enumerating pages/item_types/
+        // taxonomies/field_groups/options/members one by one, so any field
+        // def — no matter how deeply nested (per-template fields, repeater/
+        // flexible subfields, tabs/group) — gets checked without a
+        // source-specific branch here. `$variantSeen` remembers each
+        // variant name's FIRST normalized {width,height,fit} across the
+        // whole site so rule 7 can catch the same name meaning two
+        // different things in two different fields.
+        $variantSeen = [];
+        $checkImageVariants = function ($node) use (&$checkImageVariants, &$issues, &$variantSeen): void {
+            if (!is_array($node)) {
+                return;
+            }
+
+            $fieldType = $node['type'] ?? null;
+            $variants = $node['variants'] ?? null;
+
+            // Rule 0 — "variants" present but not a list at all (typo'd
+            // container, e.g. "variants": "oops"). Config::imageVariants()
+            // and the loop below both gate on is_array($variants), so a
+            // non-array value is otherwise silently ignored end-to-end —
+            // this is the only feedback the author would ever get.
+            if (($fieldType === 'image' || $fieldType === 'gallery') && array_key_exists('variants', $node) && !is_array($variants)) {
+                $fieldName = (is_string($node['name'] ?? null) && $node['name'] !== '') ? $node['name'] : '?';
+                $issues[] = "Field \"{$fieldName}\": \"variants\" must be an array of {name, width/height, fit} objects.";
+            }
+
+            if (($fieldType === 'image' || $fieldType === 'gallery') && is_array($variants) && $variants !== []) {
+                $fieldName = (is_string($node['name'] ?? null) && $node['name'] !== '') ? $node['name'] : '?';
+
+                foreach ($variants as $i => $variant) {
+                    if (!is_array($variant)) {
+                        $issues[] = "Field \"{$fieldName}\": variant #{$i} must be an object with a \"name\".";
+                        continue;
+                    }
+
+                    $name = $variant['name'] ?? null;
+                    $validName = is_string($name) && $name !== '' && preg_match('/^[a-z0-9][a-z0-9-]*$/D', $name) === 1;
+                    // Label used by every rule below — the raw name when at
+                    // least present (even if rule 1 will flag its shape),
+                    // else the positional index, so every message points at
+                    // something the author can find in site.json.
+                    $label = (is_string($name) && $name !== '') ? "\"{$name}\"" : "#{$i}";
+
+                    // Rule 1 — name missing/empty, or not a lowercase slug.
+                    // Names become `_variants/<name>/` directory names, so
+                    // the slug pattern doubles as a path-traversal guard
+                    // (blocks "..", "/", etc.).
+                    if (!$validName) {
+                        $issues[] = "Field \"{$fieldName}\": variant {$label} — name must be a non-empty lowercase slug matching ^[a-z0-9][a-z0-9-]*\$.";
+                    }
+
+                    // Rule 2 — "thumb" is the reserved global upload thumbnail.
+                    if ($validName && $name === 'thumb') {
+                        $issues[] = "Field \"{$fieldName}\": variant \"thumb\" is reserved for the global upload thumbnail — choose a different name.";
+                    }
+
+                    $hasWidth = isset($variant['width']);
+                    $hasHeight = isset($variant['height']);
+                    $positiveWidth = $hasWidth && is_int($variant['width']) && $variant['width'] > 0;
+                    $positiveHeight = $hasHeight && is_int($variant['height']) && $variant['height'] > 0;
+
+                    // Rule 3 — neither dimension ends up positive (no usable box).
+                    if (!$positiveWidth && !$positiveHeight) {
+                        $issues[] = "Field \"{$fieldName}\": variant {$label} needs at least a positive \"width\" or \"height\".";
+                    }
+                    // Rule 4 — a present width/height must be a positive integer.
+                    if ($hasWidth && !$positiveWidth) {
+                        $issues[] = "Field \"{$fieldName}\": variant {$label} — \"width\" must be a positive integer.";
+                    }
+                    if ($hasHeight && !$positiveHeight) {
+                        $issues[] = "Field \"{$fieldName}\": variant {$label} — \"height\" must be a positive integer.";
+                    }
+
+                    // Rule 5 — fit, when present, must be one of the 3 modes.
+                    $hasFit = isset($variant['fit']);
+                    $fitRaw = $variant['fit'] ?? null;
+                    $validFit = !$hasFit || (is_string($fitRaw) && in_array($fitRaw, ['contain', 'cover', 'crop'], true));
+                    if (!$validFit) {
+                        $shownFit = is_string($fitRaw) ? "\"{$fitRaw}\"" : json_encode($fitRaw);
+                        $issues[] = "Field \"{$fieldName}\": variant {$label} — \"fit\" {$shownFit} must be one of contain|cover|crop.";
+                    }
+
+                    // Rule 6 — crop center-crops to an EXACT box, so it needs
+                    // both dimensions (a single dimension has no crop to do).
+                    if ($hasFit && $fitRaw === 'crop' && !($positiveWidth && $positiveHeight)) {
+                        $issues[] = "Field \"{$fieldName}\": variant {$label} — fit \"crop\" requires both a positive \"width\" and \"height\".";
+                    }
+
+                    // Rule 7 — a variant name is a SITE-GLOBAL label: track
+                    // the first normalized spec seen per name (same
+                    // normalization Config::imageVariants() applies) and
+                    // flag any later occurrence that disagrees — it would
+                    // silently collide in the registry too.
+                    if (is_string($name) && $name !== '') {
+                        $normalized = [
+                            'width' => $hasWidth ? (int) $variant['width'] : null,
+                            'height' => $hasHeight ? (int) $variant['height'] : null,
+                            'fit' => ($hasFit && is_string($fitRaw) && $fitRaw !== '') ? $fitRaw : 'contain',
+                        ];
+                        if (isset($variantSeen[$name]) && $variantSeen[$name]['spec'] !== $normalized) {
+                            $issues[] = "Image variant \"{$name}\" is declared with conflicting settings: field \"{$variantSeen[$name]['field']}\" uses " . json_encode($variantSeen[$name]['spec']) . ", field \"{$fieldName}\" uses " . json_encode($normalized) . " — a variant name must mean the same size everywhere.";
+                        } else {
+                            $variantSeen[$name] ??= ['spec' => $normalized, 'field' => $fieldName];
+                        }
+                    }
+                }
+            }
+
+            foreach ($node as $value) {
+                if (is_array($value)) {
+                    $checkImageVariants($value);
+                }
+            }
+        };
+        $checkImageVariants($site);
+
+        // `payment_webhook` (chave de topo) — mesma forma do webhook de
+        // formulários (forms.<id>.webhook): string não-vazia OU lista
+        // não-vazia de strings não-vazias. Só a FORMA é checada aqui —
+        // Config::paymentWebhook() já normaliza permissivamente (core/
+        // Config.php), e se a função existe é o runtime quem loga (via
+        // WebhookDispatcher::dispatch), igual o forms webhook hoje. Chave
+        // ausente não é problema — o recurso é opt-in.
+        if (array_key_exists('payment_webhook', $site)) {
+            $pw = $site['payment_webhook'];
+            $validString = is_string($pw) && $pw !== '';
+            $validList = is_array($pw) && array_is_list($pw) && $pw !== []
+                && array_reduce($pw, fn($ok, $item) => $ok && is_string($item) && $item !== '', true);
+            if (!$validString && !$validList) {
+                $issues[] = '"payment_webhook" must be a non-empty string (one handler) or a non-empty list of non-empty strings (several handlers), e.g. "payment_webhook": "my_handler" or "payment_webhook": ["fn1", "fn2"].';
+            }
+        }
+
+        $printWarnings = function () use ($warnings): void {
+            if ($warnings === []) return;
+            echo "Warnings:\n";
+            foreach ($warnings as $w) {
+                echo "  - {$w}\n";
+            }
+        };
+        if ($issues === []) {
+            echo "site.json is valid.\n";
+            $printWarnings();
+        } else {
+            echo "Issues found in site.json:\n";
+            foreach ($issues as $i) {
+                echo "  - {$i}\n";
+            }
+            $printWarnings();
+            exit(1);
+        }
+    },
+
+    /**
+     * Backfill/regenerate image variants for EVERY image in the media
+     * library — media-oriented SUPERSET strategy, not a content walk.
+     *
+     * Save-time generation (VariantService::ensureForFields) only covers
+     * the record currently being saved, so pre-existing uploads, config
+     * changes, and models that never trigger it (members) leave variants
+     * missing. Rather than enumerate the 4 content models + nested
+     * repeater/flexible/i18n fields to find exactly which media is
+     * assigned where (fragile), this command iterates all image media
+     * and generates every declared variant (Config::imageVariants(),
+     * which always includes "thumb") for each — a superset of what
+     * save-time generation produces. Cost: some variant files get
+     * created for images not strictly assigned to that field; acceptable
+     * for an opt-in maintenance command, and it inherently also covers
+     * the translation and member cases that the save-time path skips.
+     *
+     * Idempotent by default — an existing variant file is left alone.
+     * --regen forces every declared variant to be rebuilt.
+     *
+     * Non-fatal per item: an unreadable source or a failed generate()
+     * (ImageVariantService::generate never throws) is counted and
+     * skipped, never aborts the run.
+     */
+    'media:variants' => function () use ($rootPath, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+
+        if (!Velk\Services\ImageVariantService::gdAvailable()) {
+            fwrite(STDERR, "GD (ext-gd) is not available — cannot generate image variants.\n");
+            exit(1);
+        }
+
+        $regen = !empty($flags['regen']);
+        $variants = $app->config->imageVariants();
+        $uploadsPath = $app->config->path('uploads');
+
+        $images = 0;
+        $created = 0;
+        $skipped = 0;
+        $failed = 0;
+        $failures = [];
+
+        $offset = 0;
+        $limit = 200;
+        while (true) {
+            $batch = Velk\Models\Media::all($limit, $offset);
+            if ($batch === []) {
+                break;
+            }
+
+            foreach ($batch as $media) {
+                // SVG tem dimensão vetorial (não faz sentido "redimensionar" via
+                // GD) e qualquer outro mime fora de image/* não é imagem.
+                if (!$media->isImage() || $media->mime === 'image/svg+xml') {
+                    continue;
+                }
+
+                $src = $uploadsPath . '/' . $media->filename;
+                if (!is_file($src)) {
+                    continue; // linha órfã no banco — arquivo sumiu do disco.
+                }
+
+                $images++;
+
+                foreach ($variants as $name => $spec) {
+                    $dest = Velk\Services\ImageVariantService::variantPath($uploadsPath, $name, $media->filename);
+
+                    if (is_file($dest) && !$regen) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    $ok = Velk\Services\ImageVariantService::generate(
+                        $src,
+                        $dest,
+                        $spec['width'],
+                        $spec['height'],
+                        $spec['fit']
+                    );
+
+                    if ($ok) {
+                        $created++;
+                    } else {
+                        $failed++;
+                        $failures[] = "{$media->filename} ({$name})";
+                    }
+                }
+            }
+
+            $offset += $limit;
+        }
+
+        echo "media:variants" . ($regen ? " --regen" : "") . "\n";
+        echo "  Images processed: {$images}\n";
+        echo "  Generated:        {$created}\n";
+        echo "  Skipped:          {$skipped}\n";
+        echo "  Failed:           {$failed}\n";
+
+        if ($failures !== []) {
+            echo "\nFailed variant(s):\n";
+            foreach ($failures as $f) {
+                echo "  - {$f}\n";
+            }
+        }
+
+        exit($failed > 0 ? 1 : 0);
+    },
+
+    'serve' => function () use ($rootPath, $positional) {
+        $port = (int) ($positional[0] ?? 8080);
+        echo "Velk serving on http://localhost:{$port}\n";
+        passthru(sprintf(
+            'php -S localhost:%d -t %s %s',
+            $port,
+            escapeshellarg($rootPath),
+            escapeshellarg($rootPath . '/index.php')
+        ));
+    },
+
+    /*
+     * Drop login_attempts rows older than --days (default 30).
+     *
+     * Why this exists: the rate-limiter (LoginAttemptService) keeps
+     * inserting rows but never cleans up — the throttle queries always
+     * filter by time window so leaving old rows around doesn't break
+     * anything, just wastes disk. Run this manually via SSH every now
+     * and then, or schedule via cron in /etc/crontab if you prefer:
+     *   0 3 * * *  cd /var/www/<project> && php bin/velk cleanup:login-attempts
+     *
+     * Idempotent: running it twice in a row deletes nothing the second
+     * time.
+     */
+    'cleanup:login-attempts' => function () use ($rootPath, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $days = isset($flags['days']) ? max(1, (int) $flags['days']) : 30;
+
+        $service = new Velk\Services\LoginAttemptService();
+        $deleted = $service->cleanup($days);
+
+        echo "Removed {$deleted} login_attempts row" . ($deleted === 1 ? '' : 's')
+           . " older than {$days} day" . ($days === 1 ? '' : 's') . ".\n";
+    },
+
+    /*
+     * Drop rate_limit_hits rows older than --days (default 30). Same
+     * rationale as cleanup:login-attempts — RateLimiterService (password-
+     * reset request throttle, member registration throttle) never cleans
+     * up after itself; the throttle queries always filter by time window
+     * so old rows are harmless dead weight, not a correctness issue.
+     *   0 3 * * *  cd /var/www/<project> && php bin/velk cleanup:rate-limit-hits
+     */
+    'cleanup:rate-limit-hits' => function () use ($rootPath, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $days = isset($flags['days']) ? max(1, (int) $flags['days']) : 30;
+
+        // Bucket/window/cap are irrelevant to cleanup() (it's a bare
+        // DELETE by age across all buckets) — any instance works.
+        $service = new Velk\Services\RateLimiterService('cleanup', 0, 0);
+        $deleted = $service->cleanup($days);
+
+        echo "Removed {$deleted} rate_limit_hits row" . ($deleted === 1 ? '' : 's')
+           . " older than {$days} day" . ($days === 1 ? '' : 's') . ".\n";
+    },
+
+    /*
+     * Drop blocked (spam) form submissions older than --days (default 30).
+     *
+     * Não é higiene opcional como os outros dois cleanups: um formulário sob
+     * ataque grava milhares de linhas por dia, e o que está guardado é dado
+     * pessoal de gente que o sistema classificou como bot — sem consentimento
+     * e sem ela saber. A retenção é o que torna a feature defensável sob
+     * LGPD, além de impedir que a tabela vire depósito.
+     *
+     * Só mexe em `blocked_by IS NOT NULL`. Submissão aprovada é lead do
+     * cliente e nunca é apagada por idade.
+     *
+     *   0 3 * * *  cd /var/www/<project> && php bin/velk cleanup:spam-submissions
+     */
+    'cleanup:spam-submissions' => function () use ($rootPath, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $days = isset($flags['days']) ? max(1, (int) $flags['days']) : 30;
+
+        // Linha por linha, e não um DELETE cru, porque a submissão pode ter
+        // arquivo: o DELETE apagava a linha e deixava o upload órfão em
+        // storage/form-uploads/ para sempre. Ver FormSubmission::deleteWithFiles().
+        $rows = $app->db->fetchAll(
+            'SELECT * FROM form_submissions'
+                . ' WHERE blocked_by IS NOT NULL AND created_at < (NOW() - INTERVAL ? DAY)',
+            [$days]
+        );
+        $deleted = 0;
+        foreach ($rows as $row) {
+            Velk\Models\FormSubmission::fromRow($row)->deleteWithFiles();
+            $deleted++;
+        }
+
+        echo "Removed {$deleted} blocked submission" . ($deleted === 1 ? '' : 's')
+           . " older than {$days} day" . ($days === 1 ? '' : 's') . ".\n";
+    },
+
+    /**
+     * Preenchimentos que começaram e nunca foram concluídos.
+     *
+     * Lead incompleto acumula: guarda nome, e-mail e telefone de quem não
+     * terminou — e, se o aceite estiver numa etapa posterior, de quem talvez
+     * nunca tenha consentido. Mesmo raciocínio do cleanup:spam-submissions,
+     * e como ele: NADA roda sozinho. Sem cron, apaga-se no painel.
+     *
+     * `pending_step IS NOT NULL`: um lead completo nunca é tocado aqui.
+     *
+     * E `blocked_by IS NULL`: linha bloqueada não é assunto desta limpeza,
+     * mesmo quando o lead parou no meio das etapas. Quem varre bloqueada é o
+     * cleanup:spam-submissions logo acima, que é o único que respeita a
+     * retenção de spam que `keepsSpamFor()` manda honrar. Sem esta cláusula,
+     * um lead que o admin marcou como spam DE PROPÓSITO era varrido pela
+     * limpeza de INCOMPLETOS aos 30 dias, ignorando a retenção do próprio
+     * formulário — e a única razão de isso não acontecer antes era o
+     * markSpam() zerar o `pending_step`, que ele deixou de fazer justamente
+     * porque destruía a posição do lead (ver o docblock dele).
+     */
+    'cleanup:incomplete-submissions' => function () use ($rootPath, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $days = isset($flags['days']) ? max(1, (int) $flags['days']) : 30;
+
+        $rows = $app->db->fetchAll(
+            'SELECT * FROM form_submissions'
+                . ' WHERE pending_step IS NOT NULL AND blocked_by IS NULL AND created_at < (NOW() - INTERVAL ? DAY)',
+            [$days]
+        );
+        $deleted = 0;
+        foreach ($rows as $row) {
+            Velk\Models\FormSubmission::fromRow($row)->deleteWithFiles();
+            $deleted++;
+        }
+
+        echo "Removed {$deleted} incomplete submission" . ($deleted === 1 ? '' : 's')
+           . " older than {$days} day" . ($days === 1 ? '' : 's') . ".\n";
+    },
+
+    /**
+     * Scan the theme + core directories for t('...') calls and register
+     * the source strings in the catalog. Re-runnable: already-known
+     * strings are skipped. Reads literal first arguments only — does
+     * not evaluate expressions, dynamic concatenation, etc.
+     */
+    'i18n:scan' => function () use ($rootPath) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        if (!$app->config->isI18nEnabled()) {
+            fwrite(STDERR, "i18n is not enabled in site.json. Set i18n.enabled = true to use this command.\n");
+            exit(1);
+        }
+
+        $found = Velk\Admin\Controllers\ThemeStringController::scanFilesystem(
+            $app->config->path('theme'),
+            $app->config->path('core')
+        );
+
+        $registered = 0;
+        $skipped = 0;
+        foreach ($found as [$original, $context]) {
+            $existing = Velk\Models\ThemeString::findByKey(Velk\Models\ThemeString::makeKey($original, $context));
+            if ($existing === null) {
+                Velk\Models\ThemeString::register($original, $context);
+                $registered++;
+            } else {
+                $skipped++;
+            }
+        }
+
+        $total = count($found);
+        echo "Scanned {$total} t() call site(s).\n";
+        echo "  Registered: {$registered} new\n";
+        echo "  Skipped:    {$skipped} already in catalog\n";
+    },
+
+    /**
+     * Lint the ADMIN-PANEL translation catalogs against actual usage.
+     * Distinct from i18n:scan above: that one is site content (t(), DB-
+     * backed catalog, needs the app booted). This one covers __() — the
+     * file-based admin-panel catalogs at core/Admin/lang/{en,pt,es}.php —
+     * and is pure static analysis over the filesystem: no app boot, no
+     * DB, so it's cheap enough to run as a CI gate on every change.
+     *
+     * Scans core/Admin (recursively) plus core/Services/EmailOtpService.php
+     * and core/FieldRenderer.php (the two files outside core/Admin that also
+     * call __() — EmailOtpService for the OTP/reset-password emails,
+     * FieldRenderer for the field-widget chrome shared by every admin edit
+     * screen) for literal __('key') / __("key") call sites. Reads literal
+     * first arguments only — does not evaluate expressions, concatenation,
+     * etc. No dynamic __($var) call sites exist in the codebase today, so
+     * this is exhaustive; any that show up later don't silently vanish from
+     * the report — they're flagged as a warning.
+     *
+     * Reports:
+     *   (a) keys used but missing from en.php — en is the canonical
+     *       catalog and must be complete, so this fails the command.
+     *   (b) keys missing from pt.php / es.php vs en.php — translation
+     *       gaps, informational only.
+     *   (c) keys defined in en.php but never used — dead, informational.
+     *
+     * Report-only: never writes to the catalogs. Exit 0 iff (a) is empty.
+     */
+    'i18n:scan-admin' => function () use ($rootPath) {
+        $scanTargets = [
+            $rootPath . '/core/Admin',
+            $rootPath . '/core/Services/EmailOtpService.php',
+            $rootPath . '/core/FieldRenderer.php',
+        ];
+
+        // Same literal-capture shape as the t() pattern above, swapped to
+        // match __(...). Requires the opening quote to immediately follow
+        // (mod whitespace) so it never matches a dynamic __($var) call.
+        $literalPattern = '/\b__\(\s*([\'"])((?:\\\\.|(?!\1).)*?)\1/s';
+        $dynamicPattern = '/\b__\(\s*\$/';
+
+        $used = [];          // key => list of "relative/path.php:line"
+        $dynamicSites = [];  // list of "relative/path.php:line"
+        $fileCount = 0;
+        $callSites = 0;
+
+        foreach ($scanTargets as $target) {
+            if (is_dir($target)) {
+                $iterator = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($target, RecursiveDirectoryIterator::SKIP_DOTS)
+                );
+                $files = [];
+                foreach ($iterator as $file) {
+                    if ($file->isFile() && strtolower($file->getExtension()) === 'php') {
+                        $files[] = $file->getPathname();
+                    }
+                }
+            } elseif (is_file($target)) {
+                $files = [$target];
+            } else {
+                $files = [];
+            }
+
+            foreach ($files as $path) {
+                $content = @file_get_contents($path);
+                if ($content === false) continue;
+                $fileCount++;
+
+                $relative = ltrim(str_replace($rootPath, '', $path), '/');
+
+                if (preg_match_all($literalPattern, $content, $matches, PREG_OFFSET_CAPTURE)) {
+                    foreach ($matches[2] as $i => $m) {
+                        [$raw, $pos] = $m;
+                        $quote = $matches[1][$i][0];
+                        $literal = $quote === "'"
+                            ? str_replace(["\\'", "\\\\"], ["'", "\\"], $raw)
+                            : stripcslashes($raw);
+                        $line = substr_count($content, "\n", 0, $pos) + 1;
+                        $used[$literal][] = "{$relative}:{$line}";
+                        $callSites++;
+                    }
+                }
+
+                if (preg_match_all($dynamicPattern, $content, $dynMatches, PREG_OFFSET_CAPTURE)) {
+                    foreach ($dynMatches[0] as $m) {
+                        $line = substr_count($content, "\n", 0, $m[1]) + 1;
+                        $dynamicSites[] = "{$relative}:{$line}";
+                    }
+                }
+            }
+        }
+
+        $langDir = $rootPath . '/core/Admin/lang';
+        $catalog = function (string $locale) use ($langDir): array {
+            $path = $langDir . "/{$locale}.php";
+            $data = is_file($path) ? require $path : [];
+            return is_array($data) ? $data : [];
+        };
+        $en = $catalog('en');
+        $pt = $catalog('pt');
+        $es = $catalog('es');
+
+        $usedKeys = array_keys($used);
+        sort($usedKeys);
+        $enKeys = array_keys($en);
+
+        $missingFromEn = array_values(array_diff($usedKeys, $enKeys));
+        $missingFromPt = array_values(array_diff($enKeys, array_keys($pt)));
+        $missingFromEs = array_values(array_diff($enKeys, array_keys($es)));
+        $dead = array_values(array_diff($enKeys, $usedKeys));
+        sort($missingFromEn);
+        sort($missingFromPt);
+        sort($missingFromEs);
+        sort($dead);
+
+        echo "Scanned {$fileCount} file(s), {$callSites} __() call site(s), " . count($usedKeys) . " distinct key(s) used.\n\n";
+
+        echo "Used:                " . count($usedKeys) . "\n";
+        echo "Missing from en.php: " . count($missingFromEn) . "\n";
+        foreach ($missingFromEn as $key) {
+            $sites = implode(', ', array_unique($used[$key]));
+            echo "  - {$key}  ({$sites})\n";
+        }
+
+        echo "Gaps in pt.php:      " . count($missingFromPt) . "\n";
+        foreach ($missingFromPt as $key) {
+            echo "  - {$key}\n";
+        }
+
+        echo "Gaps in es.php:      " . count($missingFromEs) . "\n";
+        foreach ($missingFromEs as $key) {
+            echo "  - {$key}\n";
+        }
+
+        echo "Dead in en.php:      " . count($dead) . "  (defined, never used — informational)\n";
+        foreach ($dead as $key) {
+            echo "  - {$key}\n";
+        }
+
+        if ($dynamicSites !== []) {
+            echo "\nWarning: dynamic __(\$...) call site(s) found — NOT included in the scan above:\n";
+            foreach ($dynamicSites as $site) {
+                echo "  - {$site}\n";
+            }
+        }
+
+        if ($missingFromEn !== []) {
+            echo "\ni18n:scan-admin FAILED — " . count($missingFromEn) . " key(s) used but missing from en.php.\n";
+            exit(1);
+        }
+
+        echo "\ni18n:scan-admin OK.\n";
+    },
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Content commands (item:* and page:*)
+    //
+    // These dispatch to Velk\Commands\Content. The wiring here is intentionally
+    // thin — each closure boots the app, gathers args/flags, calls the static
+    // method, and returns. All real logic (schema resolution, validation,
+    // JSON formatting) lives in core/Commands/Content.php so it's testable
+    // and reusable from non-CLI contexts.
+    //
+    // Convention for input:
+    //   --json='{...}'        → JSON inline (escape hell on the shell)
+    //   --json-stdin          → read JSON payload from stdin (preferred for
+    //                           anything non-trivial; avoids escaping issues)
+    //
+    // Convention for output:
+    //   default               → human-friendly text on stdout, errors on stderr
+    //   --format=json         → single JSON line on stdout, structured errors
+    //                           ({"ok": false, ...}) instead of non-zero exit
+    // ─────────────────────────────────────────────────────────────────────
+
+    'item:types' => function () use ($rootPath, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        Velk\Commands\Content::itemTypes($app, contentFormat($flags));
+    },
+
+    'item:schema' => function () use ($rootPath, $positional, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $type = $positional[0] ?? '';
+        if ($type === '') { fwrite(STDERR, "Usage: bin/velk item:schema <type>\n"); exit(1); }
+        Velk\Commands\Content::itemSchema($app, $type, contentFormat($flags));
+    },
+
+    'item:list' => function () use ($rootPath, $positional, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $type = $positional[0] ?? '';
+        if ($type === '') { fwrite(STDERR, "Usage: bin/velk item:list <type>\n"); exit(1); }
+        $status = isset($flags['status']) ? (string) $flags['status'] : null;
+        if ($status === 'all') $status = null; // model API treats null as no-filter
+        $search = isset($flags['search']) ? (string) $flags['search'] : null;
+        $limit  = isset($flags['limit'])  ? (int) $flags['limit'] : 100;
+        Velk\Commands\Content::itemList($app, $type, $status, $search, $limit, contentFormat($flags));
+    },
+
+    'item:get' => function () use ($rootPath, $positional, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $type = $positional[0] ?? '';
+        $slug = $positional[1] ?? '';
+        if ($type === '' || $slug === '') {
+            fwrite(STDERR, "Usage: bin/velk item:get <type> <slug-or-id>\n"); exit(1);
+        }
+        Velk\Commands\Content::itemGet($app, $type, $slug, contentFormat($flags));
+    },
+
+    'item:create' => function () use ($rootPath, $positional, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $type = $positional[0] ?? '';
+        if ($type === '') { fwrite(STDERR, "Usage: bin/velk item:create <type> --json=<JSON>\n"); exit(1); }
+        $json = readJsonInput($flags);
+        if ($json === null) { fwrite(STDERR, "Pass --json='{...}' or --json-stdin\n"); exit(1); }
+        Velk\Commands\Content::itemCreate($app, $type, $json, !empty($flags['dry-run']), contentFormat($flags));
+    },
+
+    'item:update' => function () use ($rootPath, $positional, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $type = $positional[0] ?? '';
+        $slug = $positional[1] ?? '';
+        if ($type === '' || $slug === '') {
+            fwrite(STDERR, "Usage: bin/velk item:update <type> <slug-or-id> --json=<JSON>\n"); exit(1);
+        }
+        $json = readJsonInput($flags);
+        if ($json === null) { fwrite(STDERR, "Pass --json='{...}' or --json-stdin\n"); exit(1); }
+        Velk\Commands\Content::itemUpdate($app, $type, $slug, $json, !empty($flags['dry-run']), contentFormat($flags));
+    },
+
+    'item:publish' => function () use ($rootPath, $positional, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $type = $positional[0] ?? '';
+        $slug = $positional[1] ?? '';
+        if ($type === '' || $slug === '') {
+            fwrite(STDERR, "Usage: bin/velk item:publish <type> <slug-or-id>\n"); exit(1);
+        }
+        Velk\Commands\Content::itemPublish($app, $type, $slug, contentFormat($flags));
+    },
+
+    'item:unpublish' => function () use ($rootPath, $positional, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $type = $positional[0] ?? '';
+        $slug = $positional[1] ?? '';
+        if ($type === '' || $slug === '') {
+            fwrite(STDERR, "Usage: bin/velk item:unpublish <type> <slug-or-id>\n"); exit(1);
+        }
+        Velk\Commands\Content::itemUnpublish($app, $type, $slug, contentFormat($flags));
+    },
+
+    'item:delete' => function () use ($rootPath, $positional, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $type = $positional[0] ?? '';
+        $slug = $positional[1] ?? '';
+        if ($type === '' || $slug === '') {
+            fwrite(STDERR, "Usage: bin/velk item:delete <type> <slug-or-id> --confirm\n"); exit(1);
+        }
+        Velk\Commands\Content::itemDelete($app, $type, $slug, !empty($flags['confirm']), contentFormat($flags));
+    },
+
+    'page:list' => function () use ($rootPath, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        Velk\Commands\Content::pageList($app, contentFormat($flags));
+    },
+
+    'page:schema' => function () use ($rootPath, $positional, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $key = $positional[0] ?? '';
+        if ($key === '') { fwrite(STDERR, "Usage: bin/velk page:schema <key>\n"); exit(1); }
+        Velk\Commands\Content::pageSchema($app, $key, contentFormat($flags));
+    },
+
+    'page:get' => function () use ($rootPath, $positional, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $key = $positional[0] ?? '';
+        if ($key === '') { fwrite(STDERR, "Usage: bin/velk page:get <key>\n"); exit(1); }
+        Velk\Commands\Content::pageGet($app, $key, contentFormat($flags));
+    },
+
+    'page:update' => function () use ($rootPath, $positional, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $key = $positional[0] ?? '';
+        if ($key === '') {
+            fwrite(STDERR, "Usage: bin/velk page:update <key> --json=<JSON>\n"); exit(1);
+        }
+        $json = readJsonInput($flags);
+        if ($json === null) { fwrite(STDERR, "Pass --json='{...}' or --json-stdin\n"); exit(1); }
+        Velk\Commands\Content::pageUpdate($app, $key, $json, !empty($flags['dry-run']), contentFormat($flags));
+    },
+
+    // Os preenchimentos de um formulário em CSV, no stdout. Fino como os
+    // item:*/page:*: toda a regra mora em Velk\Commands\Forms e, dali, em
+    // Velk\Services\FormCsv — a mesma que o botão "Exportar" do painel usa.
+    'form:export' => function () use ($rootPath, $positional, $flags) {
+        $app = Velk\Bootstrap::boot($rootPath);
+        $formId = $positional[0] ?? '';
+        if ($formId === '') { fwrite(STDERR, "Usage: bin/velk form:export <form-id>\n"); exit(1); }
+        exit(Velk\Commands\Forms::export($app, $formId, $flags));
+    },
+
+    // O que o modo strict da CSP bloquearia no tema, e a configuração dela
+    // (security.csp no site.json). Sem banco: é para rodar antes de ligar o
+    // estrito. A regra mora em Velk\Commands\Csp.
+    'csp:check' => function () use ($rootPath) {
+        Velk\Autoloader::register($rootPath);
+        require_once $rootPath . '/core/helpers.php';
+        Velk\Env::load($rootPath . '/.env');
+        $config = new Velk\Config($rootPath);
+        exit(Velk\Commands\Csp::check(
+            $config->path('theme'),
+            $config->site('security.csp'),
+            Velk\PublicCsp::envSettings($config),
+            null,
+            (string) $config->get('app.url', '')
+        ));
+    },
+];
+
+/**
+ * Resolve --format flag for content commands. Falls back to 'text'.
+ * Lives outside the $commands array so all closures can use it without
+ * each having to peek at $flags themselves.
+ */
+function contentFormat(array $flags): string
+{
+    $f = (string) ($flags['format'] ?? 'text');
+    return in_array($f, ['text', 'json'], true) ? $f : 'text';
+}
+
+/**
+ * Read a JSON payload from --json='...' or stdin (--json-stdin).
+ * Returns the raw JSON string (NOT decoded) so the Content class can do
+ * its own decoding-with-error-message. Returns null when neither source
+ * was provided — callers should error.
+ *
+ * Stdin mode exists because shell-escaping nontrivial JSON payloads is
+ * miserable (newlines, quotes, special chars). The skill almost always
+ * uses stdin; humans typing a quick test usually use --json='...'.
+ */
+function readJsonInput(array $flags): ?string
+{
+    if (!empty($flags['json-stdin'])) {
+        $data = stream_get_contents(STDIN);
+        return $data === false ? null : $data;
+    }
+    if (isset($flags['json']) && is_string($flags['json'])) {
+        return $flags['json'];
+    }
+    return null;
+}
+
+if (!isset($commands[$command])) {
+    fwrite(STDERR, "Unknown command: {$command}\n");
+    fwrite(STDERR, "Run 'bin/velk help' for available commands.\n");
+    exit(1);
+}
+
+try {
+    $commands[$command]();
+} catch (Velk\SetupException $e) {
+    fwrite(STDERR, "Setup error: " . $e->getMessage() . "\n");
+    fwrite(STDERR, "Run: ./bin/velk install\n");
+    exit(2);
+}

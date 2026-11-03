@@ -1,0 +1,56 @@
+# Velk — Nginx server block example
+#
+# Adjust paths and PHP-FPM socket as needed.
+# Place inside an `http {}` block, then `nginx -t && nginx -s reload`.
+
+server {
+    listen 80;
+    server_name example.com www.example.com;
+    # listen 443 ssl http2;
+    # ssl_certificate     /etc/letsencrypt/live/example.com/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+
+    root /var/www/velk;
+    index index.php;
+
+    charset utf-8;
+    server_tokens off;
+
+    # Block direct access to internal directories — engine code, env, secrets,
+    # raw uploads (uploads are served via the engine at /uploads/...).
+    location ~ ^/(core|config|migrations|storage|bin|vendor|node_modules)(/|$) { deny all; }
+
+    # Block PHP files inside theme/ — templates are loaded via include only.
+    location ~ ^/theme/.*\.php$ { deny all; }
+
+    # Block dotfiles and config-like extensions everywhere
+    location ~ /\.(?!well-known) { deny all; }
+    location ~* \.(env|json|lock|md|log|ini|sql|bak|swp|orig|yaml|yml|toml|sh|example)$ { deny all; }
+
+    # Front controller — try real files first, then fall through to index.php
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    # PHP handler
+    location ~ \.php$ {
+        try_files $uri =404;
+        fastcgi_pass unix:/var/run/php/php-fpm.sock;
+        fastcgi_index index.php;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+    }
+
+    # Long-lived cache for static assets
+    location ~* \.(css|js|woff2?|ttf|otf|eot|svg|png|jpe?g|gif|webp|avif|ico)$ {
+        access_log off;
+        expires 1M;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Security headers
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    # add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+}
